@@ -5,45 +5,85 @@ import { Users, Building, Bed, AlertTriangle, CheckCircle, Clock } from 'lucide-
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
-import { 
-  sampleStudents, 
-  sampleRooms, 
-  sampleBlocks, 
-  sampleRequests, 
-  sampleEmergencies,
-  sampleNotifications 
-} from '@/data/sampleData';
-import { DashboardStats } from '@/types';
+
+interface DashboardData {
+  overview: {
+    total_students: number;
+    total_rooms: number;
+    occupied_rooms: number;
+    available_rooms: number;
+    pending_requests: number;
+    active_emergencies: number;
+    occupancy_rate: number;
+  };
+  recent_requests: any[];
+  active_notifications: any[];
+  recent_activity: any[];
+}
 
 export default function Dashboard() {
-  const [stats, setStats] = useState<DashboardStats>({
-    total_students: 0,
-    total_rooms: 0,
-    occupied_rooms: 0,
-    available_rooms: 0,
-    pending_requests: 0,
-    active_emergencies: 0,
-  });
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Calculate dashboard statistics
-    const occupiedRooms = sampleRooms.filter(room => room.status === 'occupied').length;
-    const availableRooms = sampleRooms.filter(room => room.status === 'available').length;
-    const pendingRequests = sampleRequests.filter(req => req.status === 'pending').length;
-    const activeEmergencies = sampleEmergencies.filter(em => em.status !== 'resolved').length;
-
-    setStats({
-      total_students: sampleStudents.length,
-      total_rooms: sampleRooms.length,
-      occupied_rooms: occupiedRooms,
-      available_rooms: availableRooms,
-      pending_requests: pendingRequests,
-      active_emergencies: activeEmergencies,
-    });
+    fetchDashboardData();
   }, []);
 
-  const recentRequests = sampleRequests.slice(0, 5);
-  const activeNotifications = sampleNotifications.filter(n => n.is_active).slice(0, 3);
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/dashboard/stats');
+      const result = await response.json();
+      
+      if (result.success) {
+        setDashboardData(result.data);
+      } else {
+        setError(result.error || 'Failed to fetch dashboard data');
+      }
+    } catch (err) {
+      setError('Failed to fetch dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-white p-6 rounded-lg shadow">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="text-red-800">Error: {error}</div>
+            <Button onClick={fetchDashboardData} className="mt-2">
+              Retry
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!dashboardData) return null;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -65,7 +105,7 @@ export default function Dashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Total Students</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total_students}</p>
+                <p className="text-2xl font-bold text-gray-900">{dashboardData.overview.total_students}</p>
               </div>
             </CardContent>
           </Card>
@@ -77,7 +117,7 @@ export default function Dashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Total Rooms</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total_rooms}</p>
+                <p className="text-2xl font-bold text-gray-900">{dashboardData.overview.total_rooms}</p>
               </div>
             </CardContent>
           </Card>
@@ -89,7 +129,7 @@ export default function Dashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Occupied Rooms</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.occupied_rooms}</p>
+                <p className="text-2xl font-bold text-gray-900">{dashboardData.overview.occupied_rooms}</p>
               </div>
             </CardContent>
           </Card>
@@ -101,7 +141,7 @@ export default function Dashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Available Rooms</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.available_rooms}</p>
+                <p className="text-2xl font-bold text-gray-900">{dashboardData.overview.available_rooms}</p>
               </div>
             </CardContent>
           </Card>
@@ -113,7 +153,7 @@ export default function Dashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Pending Requests</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pending_requests}</p>
+                <p className="text-2xl font-bold text-gray-900">{dashboardData.overview.pending_requests}</p>
               </div>
             </CardContent>
           </Card>
@@ -125,7 +165,7 @@ export default function Dashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Active Emergencies</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.active_emergencies}</p>
+                <p className="text-2xl font-bold text-gray-900">{dashboardData.overview.active_emergencies}</p>
               </div>
             </CardContent>
           </Card>
@@ -139,7 +179,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentRequests.map((request) => (
+                {dashboardData.recent_requests.map((request) => (
                   <div key={request.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">
@@ -181,7 +221,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {activeNotifications.map((notification) => (
+                {dashboardData.active_notifications.map((notification) => (
                   <div key={notification.id} className="p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
