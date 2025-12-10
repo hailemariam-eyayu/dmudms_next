@@ -4,10 +4,11 @@ import dataStore from '@/lib/dataStore';
 // GET /api/students/[id] - Get a specific student
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
-    const student = dataStore.getStudent(params.id);
+    const student = dataStore.getStudent(id);
     
     if (!student) {
       return NextResponse.json(
@@ -17,7 +18,7 @@ export async function GET(
     }
 
     // Get student placement if exists
-    const placement = dataStore.getStudentPlacement(params.id);
+    const placement = dataStore.getStudentPlacement(id);
 
     return NextResponse.json({
       success: true,
@@ -37,12 +38,13 @@ export async function GET(
 // PUT /api/students/[id] - Update a specific student
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const body = await request.json();
     
-    const updatedStudent = dataStore.updateStudent(params.id, body);
+    const updatedStudent = dataStore.updateStudent(id, body);
     
     if (!updatedStudent) {
       return NextResponse.json(
@@ -67,10 +69,11 @@ export async function PUT(
 // DELETE /api/students/[id] - Delete a specific student
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
-    const deleted = dataStore.deleteStudent(params.id);
+    const deleted = dataStore.deleteStudent(id);
     
     if (!deleted) {
       return NextResponse.json(

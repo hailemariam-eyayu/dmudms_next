@@ -4,10 +4,11 @@ import dataStore from '@/lib/dataStore';
 // GET /api/placements/[id] - Get placement by student ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
-    const placement = dataStore.getStudentPlacement(params.id);
+    const placement = dataStore.getStudentPlacement(id);
     
     if (!placement) {
       return NextResponse.json(
@@ -39,13 +40,14 @@ export async function GET(
 // PUT /api/placements/[id] - Update placement (room transfer)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const body = await request.json();
     const { room, block, action } = body;
 
-    const placement = dataStore.getStudentPlacement(params.id);
+    const placement = dataStore.getStudentPlacement(id);
     if (!placement) {
       return NextResponse.json(
         { success: false, error: 'Placement not found' },
@@ -135,10 +137,11 @@ export async function PUT(
 // DELETE /api/placements/[id] - Unassign student
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
-    const placement = dataStore.getStudentPlacement(params.id);
+    const placement = dataStore.getStudentPlacement(id);
     if (!placement) {
       return NextResponse.json(
         { success: false, error: 'Placement not found' },
@@ -157,7 +160,7 @@ export async function DELETE(
     }
 
     // Delete placement
-    const deleted = dataStore.deleteStudentPlacement(params.id);
+    const deleted = dataStore.deleteStudentPlacement(id);
     
     if (!deleted) {
       return NextResponse.json(
@@ -167,7 +170,7 @@ export async function DELETE(
     }
 
     // Update student status back to active
-    dataStore.updateStudent(params.id, { status: 'active' });
+    dataStore.updateStudent(id, { status: 'active' });
 
     return NextResponse.json({
       success: true,

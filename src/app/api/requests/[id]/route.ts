@@ -4,10 +4,11 @@ import dataStore from '@/lib/dataStore';
 // GET /api/requests/[id] - Get a specific request
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
-    const requestData = dataStore.getRequest(parseInt(params.id));
+    const requestData = dataStore.getRequest(parseInt(id));
     
     if (!requestData) {
       return NextResponse.json(
@@ -37,14 +38,15 @@ export async function GET(
 // PUT /api/requests/[id] - Update a specific request
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const body = await request.json();
     const { action } = body;
 
     if (action === 'approve') {
-      const updatedRequest = dataStore.updateRequest(parseInt(params.id), {
+      const updatedRequest = dataStore.updateRequest(parseInt(id), {
         status: 'approved',
         resolved_date: new Date().toISOString().split('T')[0],
         resolved_by: body.resolved_by || 'system'
@@ -65,7 +67,7 @@ export async function PUT(
     }
 
     if (action === 'reject') {
-      const updatedRequest = dataStore.updateRequest(parseInt(params.id), {
+      const updatedRequest = dataStore.updateRequest(parseInt(id), {
         status: 'rejected',
         resolved_date: new Date().toISOString().split('T')[0],
         resolved_by: body.resolved_by || 'system'
@@ -86,7 +88,7 @@ export async function PUT(
     }
 
     if (action === 'complete') {
-      const updatedRequest = dataStore.updateRequest(parseInt(params.id), {
+      const updatedRequest = dataStore.updateRequest(parseInt(id), {
         status: 'completed',
         resolved_date: new Date().toISOString().split('T')[0],
         resolved_by: body.resolved_by || 'system'
@@ -107,7 +109,7 @@ export async function PUT(
     }
 
     // Regular update
-    const updatedRequest = dataStore.updateRequest(parseInt(params.id), body);
+    const updatedRequest = dataStore.updateRequest(parseInt(id), body);
     
     if (!updatedRequest) {
       return NextResponse.json(
@@ -132,10 +134,11 @@ export async function PUT(
 // DELETE /api/requests/[id] - Delete a specific request
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
-    const deleted = dataStore.deleteRequest(parseInt(params.id));
+    const deleted = dataStore.deleteRequest(parseInt(id));
     
     if (!deleted) {
       return NextResponse.json(

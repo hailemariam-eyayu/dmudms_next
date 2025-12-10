@@ -4,10 +4,11 @@ import dataStore from '@/lib/dataStore';
 // GET /api/blocks/[id] - Get a specific block
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
-    const block = dataStore.getBlock(params.id);
+    const block = dataStore.getBlock(id);
     
     if (!block) {
       return NextResponse.json(
@@ -17,10 +18,10 @@ export async function GET(
     }
 
     // Get rooms in this block
-    const rooms = dataStore.getRooms().filter(r => r.block === params.id);
+    const rooms = dataStore.getRooms().filter(r => r.block === id);
     
     // Get placements in this block
-    const placements = dataStore.getStudentPlacements().filter(p => p.block === params.id);
+    const placements = dataStore.getStudentPlacements().filter(p => p.block === id);
     
     // Calculate statistics
     const totalRooms = rooms.length;
@@ -59,12 +60,13 @@ export async function GET(
 // PUT /api/blocks/[id] - Update a specific block
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const body = await request.json();
     
-    const updatedBlock = dataStore.updateBlock(params.id, body);
+    const updatedBlock = dataStore.updateBlock(id, body);
     
     if (!updatedBlock) {
       return NextResponse.json(
@@ -89,11 +91,12 @@ export async function PUT(
 // DELETE /api/blocks/[id] - Delete a specific block
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // Check if block has any placements
-    const placements = dataStore.getStudentPlacements().filter(p => p.block === params.id);
+    const placements = dataStore.getStudentPlacements().filter(p => p.block === id);
     if (placements.length > 0) {
       return NextResponse.json(
         { success: false, error: 'Cannot delete block with active placements' },
@@ -101,7 +104,7 @@ export async function DELETE(
       );
     }
 
-    const deleted = dataStore.deleteBlock(params.id);
+    const deleted = dataStore.deleteBlock(id);
     
     if (!deleted) {
       return NextResponse.json(
