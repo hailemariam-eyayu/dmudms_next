@@ -179,8 +179,8 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {dashboardData.recent_requests.map((request) => (
-                  <div key={request.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                {dashboardData.recent_requests.map((request, index) => (
+                  <div key={request._id || request.id || `request-${index}`} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">
                         {request.student_id}
@@ -221,8 +221,8 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {dashboardData.active_notifications.map((notification) => (
-                  <div key={notification.id} className="p-4 bg-gray-50 rounded-lg">
+                {dashboardData.active_notifications.map((notification, index) => (
+                  <div key={notification._id || notification.id || `notification-${index}`} className="p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="text-sm font-medium text-gray-900">
