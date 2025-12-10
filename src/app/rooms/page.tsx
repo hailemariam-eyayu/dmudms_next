@@ -118,8 +118,8 @@ export default function RoomsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {rooms.map((room) => (
-                  <tr key={room._id} className="hover:bg-gray-50">
+                {rooms.map((room, index) => (
+                  <tr key={room._id || `room-${index}`} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {room.room_id}
                     </td>

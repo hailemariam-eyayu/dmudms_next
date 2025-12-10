@@ -48,6 +48,10 @@ export default function PlacementsPage() {
   };
 
   const handleAutoAssign = async () => {
+    if (!confirm('This will automatically assign all unassigned students to available rooms. Continue?')) {
+      return;
+    }
+
     try {
       const response = await fetch('/api/placements', {
         method: 'POST',
@@ -59,7 +63,10 @@ export default function PlacementsPage() {
       
       const data = await response.json();
       if (data.success) {
-        alert(`Successfully assigned ${data.assigned} students`);
+        alert(`Successfully assigned ${data.assigned} students. ${data.errors?.length || 0} errors occurred.`);
+        if (data.errors && data.errors.length > 0) {
+          console.log('Assignment errors:', data.errors);
+        }
         fetchPlacements();
       } else {
         alert(data.error || 'Failed to auto-assign students');
@@ -135,7 +142,7 @@ export default function PlacementsPage() {
           <p className="mt-2 text-gray-600">Manage student room assignments and placements</p>
         </div>
 
-        <div className="mb-6 flex gap-4">
+        <div className="mb-6 flex flex-wrap gap-4">
           <button
             onClick={handleAutoAssign}
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
@@ -148,6 +155,19 @@ export default function PlacementsPage() {
           >
             Unassign All Students
           </button>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Search by Student ID, Room, or Block..."
+              className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => {
+                // Add search functionality here if needed
+              }}
+            />
+            <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+              Search
+            </button>
+          </div>
         </div>
 
         <div className="bg-white shadow rounded-lg">
@@ -180,8 +200,8 @@ export default function PlacementsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {placements.map((placement) => (
-                  <tr key={placement._id} className="hover:bg-gray-50">
+                {placements.map((placement, index) => (
+                  <tr key={placement._id || `placement-${index}`} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {placement.student_id}
                     </td>

@@ -130,8 +130,8 @@ export default function RequestsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {requests.map((request) => (
-                  <tr key={request._id} className="hover:bg-gray-50">
+                {requests.map((request, index) => (
+                  <tr key={request._id || `request-${index}`} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {request.student_id}
                     </td>

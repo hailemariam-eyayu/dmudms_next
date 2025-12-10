@@ -2,12 +2,15 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IRequest extends Document {
   student_id: string;
-  type: 'room_change' | 'maintenance' | 'complaint' | 'other';
+  type: 'replacement' | 'maintenance' | 'complaint' | 'other';
   description: string;
-  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  status: 'pending' | 'approved' | 'rejected' | 'done';
   created_date: Date;
   resolved_date?: Date;
   resolved_by?: string;
+  approved_by?: string;
+  approved_date?: Date;
+  image_path?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -20,17 +23,19 @@ const RequestSchema: Schema = new Schema({
   },
   type: {
     type: String,
-    enum: ['room_change', 'maintenance', 'complaint', 'other'],
-    required: true
+    enum: ['replacement', 'maintenance', 'complaint', 'other'],
+    required: true,
+    default: 'maintenance'
   },
   description: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    maxlength: 400
   },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected', 'completed'],
+    enum: ['pending', 'approved', 'rejected', 'done'],
     default: 'pending'
   },
   created_date: {
@@ -43,6 +48,17 @@ const RequestSchema: Schema = new Schema({
   resolved_by: {
     type: String,
     ref: 'Employee'
+  },
+  approved_by: {
+    type: String,
+    ref: 'Employee'
+  },
+  approved_date: {
+    type: Date
+  },
+  image_path: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

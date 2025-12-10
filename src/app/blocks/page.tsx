@@ -127,8 +127,8 @@ export default function BlocksPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {blocks.map((block) => (
-                  <tr key={block._id} className="hover:bg-gray-50">
+                {blocks.map((block, index) => (
+                  <tr key={block._id || `block-${index}`} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {block.block_id}
                     </td>

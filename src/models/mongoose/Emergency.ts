@@ -7,6 +7,15 @@ export interface IEmergency extends Document {
   status: 'reported' | 'in_progress' | 'resolved';
   reported_date: Date;
   resolved_date?: Date;
+  // Enhanced emergency contact info from Laravel
+  father_name?: string;
+  grand_father?: string;
+  grand_grand_father?: string;
+  phone?: string;
+  region?: string;
+  woreda?: string;
+  kebele?: string;
+  mother_name?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -38,6 +47,39 @@ const EmergencySchema: Schema = new Schema({
   },
   resolved_date: {
     type: Date
+  },
+  // Enhanced emergency contact info
+  father_name: {
+    type: String,
+    trim: true
+  },
+  grand_father: {
+    type: String,
+    trim: true
+  },
+  grand_grand_father: {
+    type: String,
+    trim: true
+  },
+  phone: {
+    type: String,
+    trim: true
+  },
+  region: {
+    type: String,
+    trim: true
+  },
+  woreda: {
+    type: String,
+    trim: true
+  },
+  kebele: {
+    type: String,
+    trim: true
+  },
+  mother_name: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
