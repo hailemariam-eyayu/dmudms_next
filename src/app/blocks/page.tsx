@@ -4,18 +4,18 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 
-interface Room {
+interface Block {
   _id: string;
-  room_id: string;
-  block: string;
-  status: 'available' | 'occupied' | 'maintenance' | 'reserved';
+  block_id: string;
+  disable_group: boolean;
+  status: 'active' | 'inactive' | 'maintenance';
   capacity: number;
-  current_occupancy: number;
+  reserved_for: 'male' | 'female' | 'mixed' | 'disabled';
 }
 
-export default function RoomsPage() {
+export default function BlocksPage() {
   const { data: session, status } = useSession();
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,21 +26,21 @@ export default function RoomsPage() {
       return;
     }
 
-    fetchRooms();
+    fetchBlocks();
   }, [session, status]);
 
-  const fetchRooms = async () => {
+  const fetchBlocks = async () => {
     try {
-      const response = await fetch('/api/rooms');
+      const response = await fetch('/api/blocks');
       const data = await response.json();
       
       if (data.success) {
-        setRooms(data.data);
+        setBlocks(data.data);
       } else {
-        setError(data.error || 'Failed to fetch rooms');
+        setError(data.error || 'Failed to fetch blocks');
       }
     } catch (err) {
-      setError('Failed to fetch rooms');
+      setError('Failed to fetch blocks');
     } finally {
       setLoading(false);
     }
@@ -48,10 +48,19 @@ export default function RoomsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'available': return 'bg-green-100 text-green-800';
-      case 'occupied': return 'bg-red-100 text-red-800';
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'inactive': return 'bg-gray-100 text-gray-800';
       case 'maintenance': return 'bg-yellow-100 text-yellow-800';
-      case 'reserved': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getReservedForColor = (reservedFor: string) => {
+    switch (reservedFor) {
+      case 'male': return 'bg-blue-100 text-blue-800';
+      case 'female': return 'bg-pink-100 text-pink-800';
+      case 'mixed': return 'bg-purple-100 text-purple-800';
+      case 'disabled': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -61,7 +70,7 @@ export default function RoomsPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading rooms...</p>
+          <p className="mt-4 text-gray-600">Loading blocks...</p>
         </div>
       </div>
     );
@@ -73,7 +82,7 @@ export default function RoomsPage() {
         <div className="text-center">
           <p className="text-red-600">{error}</p>
           <button 
-            onClick={fetchRooms}
+            onClick={fetchBlocks}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             Retry
@@ -87,13 +96,13 @@ export default function RoomsPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Room Management</h1>
-          <p className="mt-2 text-gray-600">Manage dormitory rooms and their occupancy</p>
+          <h1 className="text-3xl font-bold text-gray-900">Block Management</h1>
+          <p className="mt-2 text-gray-600">Manage dormitory blocks and their configurations</p>
         </div>
 
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">All Rooms</h2>
+            <h2 className="text-lg font-medium text-gray-900">All Blocks</h2>
           </div>
           
           <div className="overflow-x-auto">
@@ -101,41 +110,47 @@ export default function RoomsPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Room ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Block
+                    Block ID
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Occupancy
+                    Capacity
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Capacity
+                    Reserved For
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Disability Access
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {rooms.map((room) => (
-                  <tr key={room._id} className="hover:bg-gray-50">
+                {blocks.map((block) => (
+                  <tr key={block._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {room.room_id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {room.block}
+                      {block.block_id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(room.status)}`}>
-                        {room.status}
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(block.status)}`}>
+                        {block.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {room.current_occupancy}
+                      {block.capacity}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getReservedForColor(block.reserved_for)}`}>
+                        {block.reserved_for}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {room.capacity}
+                      {block.disable_group ? (
+                        <span className="text-green-600">✓ Accessible</span>
+                      ) : (
+                        <span className="text-gray-400">✗ Not Accessible</span>
+                      )}
                     </td>
                   </tr>
                 ))}

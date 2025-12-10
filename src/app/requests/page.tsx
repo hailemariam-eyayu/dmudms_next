@@ -4,18 +4,20 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 
-interface Room {
+interface Request {
   _id: string;
-  room_id: string;
-  block: string;
-  status: 'available' | 'occupied' | 'maintenance' | 'reserved';
-  capacity: number;
-  current_occupancy: number;
+  student_id: string;
+  type: 'room_change' | 'maintenance' | 'complaint' | 'other';
+  description: string;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  created_date: string;
+  resolved_date?: string;
+  resolved_by?: string;
 }
 
-export default function RoomsPage() {
+export default function RequestsPage() {
   const { data: session, status } = useSession();
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,21 +28,21 @@ export default function RoomsPage() {
       return;
     }
 
-    fetchRooms();
+    fetchRequests();
   }, [session, status]);
 
-  const fetchRooms = async () => {
+  const fetchRequests = async () => {
     try {
-      const response = await fetch('/api/rooms');
+      const response = await fetch('/api/requests');
       const data = await response.json();
       
       if (data.success) {
-        setRooms(data.data);
+        setRequests(data.data);
       } else {
-        setError(data.error || 'Failed to fetch rooms');
+        setError(data.error || 'Failed to fetch requests');
       }
     } catch (err) {
-      setError('Failed to fetch rooms');
+      setError('Failed to fetch requests');
     } finally {
       setLoading(false);
     }
@@ -48,10 +50,20 @@ export default function RoomsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'available': return 'bg-green-100 text-green-800';
-      case 'occupied': return 'bg-red-100 text-red-800';
-      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
-      case 'reserved': return 'bg-blue-100 text-blue-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      case 'completed': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'room_change': return 'bg-purple-100 text-purple-800';
+      case 'maintenance': return 'bg-orange-100 text-orange-800';
+      case 'complaint': return 'bg-red-100 text-red-800';
+      case 'other': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -61,7 +73,7 @@ export default function RoomsPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading rooms...</p>
+          <p className="mt-4 text-gray-600">Loading requests...</p>
         </div>
       </div>
     );
@@ -73,7 +85,7 @@ export default function RoomsPage() {
         <div className="text-center">
           <p className="text-red-600">{error}</p>
           <button 
-            onClick={fetchRooms}
+            onClick={fetchRequests}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             Retry
@@ -87,13 +99,13 @@ export default function RoomsPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Room Management</h1>
-          <p className="mt-2 text-gray-600">Manage dormitory rooms and their occupancy</p>
+          <h1 className="text-3xl font-bold text-gray-900">Request Management</h1>
+          <p className="mt-2 text-gray-600">Manage student requests and complaints</p>
         </div>
 
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">All Rooms</h2>
+            <h2 className="text-lg font-medium text-gray-900">All Requests</h2>
           </div>
           
           <div className="overflow-x-auto">
@@ -101,41 +113,43 @@ export default function RoomsPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Room ID
+                    Student ID
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Block
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Description
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Occupancy
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Capacity
+                    Created Date
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {rooms.map((room) => (
-                  <tr key={room._id} className="hover:bg-gray-50">
+                {requests.map((request) => (
+                  <tr key={request._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {room.room_id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {room.block}
+                      {request.student_id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(room.status)}`}>
-                        {room.status}
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(request.type)}`}>
+                        {request.type.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                      {request.description}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
+                        {request.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {room.current_occupancy}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {room.capacity}
+                      {new Date(request.created_date).toLocaleDateString()}
                     </td>
                   </tr>
                 ))}
