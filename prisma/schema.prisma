@@ -1,0 +1,370 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model Student {
+  student_id        String   @id
+  first_name        String
+  second_name       String?
+  last_name         String
+  email             String   @unique
+  gender            Gender
+  batch             String
+  disability_status DisabilityStatus @default(NONE)
+  status            StudentStatus    @default(ACTIVE)
+  password          String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relations
+  placement         StudentPlacement?
+  requests          Request[]
+  emergencies       Emergency[]
+  materials         Material[]
+  exit_papers       ExitPaper[]
+
+  @@map("students")
+}
+
+model Employee {
+  employee_id String       @id
+  first_name  String
+  last_name   String
+  email       String       @unique
+  role        EmployeeRole
+  status      EmployeeStatus @default(ACTIVE)
+  password    String?
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+
+  // Relations
+  proctor_placements ProctorPlacement[]
+  resolved_requests  Request[] @relation("ResolvedBy")
+
+  @@map("employees")
+}
+
+model Block {
+  block_id      String      @id
+  disable_group Boolean     @default(false)
+  status        BlockStatus @default(ACTIVE)
+  capacity      Int
+  reserved_for  Gender
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+
+  // Relations
+  rooms              Room[]
+  student_placements StudentPlacement[]
+  proctor_placements ProctorPlacement[]
+
+  @@map("blocks")
+}
+
+model Room {
+  room_id           String     @id
+  block_id          String
+  status            RoomStatus @default(AVAILABLE)
+  capacity          Int
+  current_occupancy Int        @default(0)
+  created_at        DateTime   @default(now())
+  updated_at        DateTime   @updatedAt
+
+  // Relations
+  block             Block              @relation(fields: [block_id], references: [block_id])
+  student_placements StudentPlacement[]
+
+  @@unique([room_id, block_id])
+  @@index([block_id])
+  @@map("rooms")
+}
+
+model StudentPlacement {
+  id            Int                   @id @default(autoincrement())
+  student_id    String                @unique
+  room_id       String
+  block_id      String
+  year          String
+  status        StudentPlacementStatus @default(ACTIVE)
+  assigned_date DateTime
+  created_at    DateTime              @default(now())
+  updated_at    DateTime              @updatedAt
+
+  // Relations
+  student Student @relation(fields: [student_id], references: [student_id])
+  room    Room    @relation(fields: [room_id, block_id], references: [room_id, block_id])
+  block   Block   @relation(fields: [block_id], references: [block_id])
+
+  @@index([student_id])
+  @@index([room_id, block_id])
+  @@index([block_id])
+  @@map("student_placements")
+}
+
+model ProctorPlacement {
+  id          Int      @id @default(autoincrement())
+  proctor_id  String
+  block_id    String
+  year        String
+  first_entry DateTime
+  status      ProctorPlacementStatus @default(ACTIVE)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  proctor Employee @relation(fields: [proctor_id], references: [employee_id])
+  block   Block    @relation(fields: [block_id], references: [block_id])
+
+  @@index([proctor_id])
+  @@index([block_id])
+  @@map("proctor_placements")
+}
+
+model Request {
+  id            Int           @id @default(autoincrement())
+  student_id    String
+  type          RequestType
+  description   String        @db.Text
+  status        RequestStatus @default(PENDING)
+  created_date  DateTime      @default(now())
+  resolved_date DateTime?
+  resolved_by   String?
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+
+  // Relations
+  student  Student   @relation(fields: [student_id], references: [student_id])
+  resolver Employee? @relation("ResolvedBy", fields: [resolved_by], references: [employee_id])
+
+  @@index([student_id])
+  @@index([resolved_by])
+  @@map("requests")
+}
+
+model Emergency {
+  id            Int             @id @default(autoincrement())
+  student_id    String
+  type          EmergencyType
+  description   String          @db.Text
+  status        EmergencyStatus @default(REPORTED)
+  reported_date DateTime        @default(now())
+  resolved_date DateTime?
+  created_at    DateTime        @default(now())
+  updated_at    DateTime        @updatedAt
+
+  // Relations
+  student Student @relation(fields: [student_id], references: [student_id])
+
+  @@index([student_id])
+  @@map("emergencies")
+}
+
+model Material {
+  id              Int               @id @default(autoincrement())
+  student_id      String
+  room_id         String
+  block_id        String
+  item_name       String
+  quantity        Int
+  condition       MaterialCondition
+  registered_date DateTime          @default(now())
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+
+  // Relations
+  student Student @relation(fields: [student_id], references: [student_id])
+
+  @@index([student_id])
+  @@map("materials")
+}
+
+model ExitPaper {
+  id           Int             @id @default(autoincrement())
+  student_id   String
+  exit_date    DateTime
+  reason       String
+  status       ExitPaperStatus @default(PENDING)
+  created_date DateTime        @default(now())
+  approved_by  String?
+  created_at   DateTime        @default(now())
+  updated_at   DateTime        @updatedAt
+
+  // Relations
+  student Student @relation(fields: [student_id], references: [student_id])
+
+  @@index([student_id])
+  @@map("exit_papers")
+}
+
+model Notification {
+  id              Int                    @id @default(autoincrement())
+  title           String
+  message         String                 @db.Text
+  type            NotificationType
+  target_audience NotificationAudience
+  created_date    DateTime               @default(now())
+  expires_date    DateTime?
+  is_active       Boolean                @default(true)
+  created_at      DateTime               @default(now())
+  updated_at      DateTime               @updatedAt
+
+  @@map("notifications")
+}
+
+// Enums
+enum Gender {
+  MALE
+  FEMALE
+  MIXED
+  DISABLED
+
+  @@map("gender")
+}
+
+enum DisabilityStatus {
+  NONE
+  PHYSICAL
+  VISUAL
+  HEARING
+  OTHER
+
+  @@map("disability_status")
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  SUSPENDED
+
+  @@map("student_status")
+}
+
+enum EmployeeRole {
+  ADMIN
+  DIRECTORATE
+  COORDINATOR
+  PROCTOR
+  REGISTRAR
+  MAINTAINER
+
+  @@map("employee_role")
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+
+  @@map("employee_status")
+}
+
+enum BlockStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+
+  @@map("block_status")
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+  RESERVED
+
+  @@map("room_status")
+}
+
+enum StudentPlacementStatus {
+  ACTIVE
+  INACTIVE
+  TRANSFERRED
+
+  @@map("student_placement_status")
+}
+
+enum ProctorPlacementStatus {
+  ACTIVE
+  INACTIVE
+
+  @@map("proctor_placement_status")
+}
+
+enum RequestType {
+  ROOM_CHANGE
+  MAINTENANCE
+  COMPLAINT
+  OTHER
+
+  @@map("request_type")
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+
+  @@map("request_status")
+}
+
+enum EmergencyType {
+  MEDICAL
+  SECURITY
+  FIRE
+  OTHER
+
+  @@map("emergency_type")
+}
+
+enum EmergencyStatus {
+  REPORTED
+  IN_PROGRESS
+  RESOLVED
+
+  @@map("emergency_status")
+}
+
+enum MaterialCondition {
+  GOOD
+  FAIR
+  POOR
+  DAMAGED
+
+  @@map("material_condition")
+}
+
+enum ExitPaperStatus {
+  PENDING
+  APPROVED
+  PRINTED
+
+  @@map("exit_paper_status")
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  SUCCESS
+  ERROR
+
+  @@map("notification_type")
+}
+
+enum NotificationAudience {
+  ALL
+  STUDENTS
+  STAFF
+  PROCTORS
+
+  @@map("notification_audience")
+}

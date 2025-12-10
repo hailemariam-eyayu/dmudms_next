@@ -3,7 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "description": "A modern dormitory management system built with Next.js and optimized for Vercel deployment",
-  "keywords": ["dormitory", "management", "nextjs", "vercel", "education", "housing"],
+  "keywords": [
+    "dormitory",
+    "management",
+    "nextjs",
+    "vercel",
+    "education",
+    "housing"
+  ],
   "author": "Dormitory Management Team",
   "license": "MIT",
   "scripts": {
@@ -14,9 +21,18 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.11.1",
+    "@prisma/client": "^7.1.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.556.0",
+    "mongoose": "^9.0.1",
     "next": "16.0.8",
+    "next-auth": "^4.24.13",
+    "prisma": "^7.1.0",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "tailwind-merge": "^3.4.0"

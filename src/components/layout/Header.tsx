@@ -2,15 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSession, signOut } from 'next-auth/react';
 import { Menu, X, Bell, User, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface HeaderProps {
-  userRole?: string;
-  userName?: string;
-}
-
-export default function Header({ userRole = 'guest', userName = 'Guest User' }: HeaderProps) {
+export default function Header() {
+  const { data: session, status } = useSession();
+  const userRole = session?.user?.role || 'guest';
+  const userName = session?.user?.name || 'Guest User';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
@@ -87,12 +86,22 @@ export default function Header({ userRole = 'guest', userName = 'Guest User' }: 
                   >
                     Profile Settings
                   </Link>
-                  <button
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <LogOut className="w-4 h-4 inline mr-2" />
-                    Sign Out
-                  </button>
+                  {session ? (
+                    <button
+                      onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <LogOut className="w-4 h-4 inline mr-2" />
+                      Sign Out
+                    </button>
+                  ) : (
+                    <Link
+                      href="/auth/signin"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Sign In
+                    </Link>
+                  )}
                 </div>
               )}
             </div>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dataStore from '@/lib/dataStore';
+import unifiedDataStore from '@/lib/unifiedDataStore';
 import { Student } from '@/types';
 
 // GET /api/students - Get all students with optional search
@@ -11,11 +11,11 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    let students = dataStore.getStudents();
+    let students = await unifiedDataStore.getStudents();
 
     // Apply search filter
     if (search) {
-      students = dataStore.searchStudents(search);
+      students = await unifiedDataStore.searchStudents(search);
     }
 
     // Apply status filter
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if student ID already exists
-    const existingStudent = dataStore.getStudent(body.student_id);
+    const existingStudent = await unifiedDataStore.getStudent(body.student_id);
     if (existingStudent) {
       return NextResponse.json(
         { success: false, error: 'Student ID already exists' },
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
       status: body.status || 'active'
     };
 
-    const newStudent = dataStore.createStudent(studentData);
+    const newStudent = await unifiedDataStore.createStudent(studentData);
 
     return NextResponse.json({
       success: true,
@@ -106,7 +106,7 @@ export async function PUT(request: NextRequest) {
     const { action } = body;
 
     if (action === 'activate_all') {
-      const count = dataStore.activateAllStudents();
+      const count = await unifiedDataStore.activateAllStudents();
       return NextResponse.json({
         success: true,
         message: `${count} students activated successfully`
@@ -114,7 +114,7 @@ export async function PUT(request: NextRequest) {
     }
 
     if (action === 'deactivate_all') {
-      const count = dataStore.deactivateAllStudents();
+      const count = await unifiedDataStore.deactivateAllStudents();
       return NextResponse.json({
         success: true,
         message: `${count} students deactivated successfully`

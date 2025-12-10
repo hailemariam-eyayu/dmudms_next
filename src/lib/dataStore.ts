@@ -26,6 +26,7 @@ import {
   sampleEmergencies,
   sampleNotifications
 } from '@/data/sampleData';
+import { hashPassword } from './auth';
 
 // Data store class
 class DataStore {
@@ -33,6 +34,27 @@ class DataStore {
   private rooms: Room[] = [...sampleRooms];
   private blocks: Block[] = [...sampleBlocks];
   private employees: Employee[] = [...sampleEmployees];
+
+  constructor() {
+    // Initialize with hashed passwords
+    this.initializePasswords();
+  }
+
+  private initializePasswords() {
+    // Hash default passwords for employees
+    this.employees.forEach(employee => {
+      if (!employee.password || employee.password === 'default123') {
+        employee.password = hashPassword('default123');
+      }
+    });
+
+    // Hash default passwords for students
+    this.students.forEach(student => {
+      if (!student.password || student.password === 'default123') {
+        student.password = hashPassword('default123');
+      }
+    });
+  }
   private studentPlacements: StudentPlacement[] = [...sampleStudentPlacements];
   private proctorPlacements: ProctorPlacement[] = [...sampleProctorPlacements];
   private requests: Request[] = [...sampleRequests];

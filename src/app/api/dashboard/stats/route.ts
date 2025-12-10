@@ -1,39 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dataStore from '@/lib/dataStore';
+import unifiedDataStore from '@/lib/unifiedDataStore';
 
 // GET /api/dashboard/stats - Get dashboard statistics
 export async function GET(request: NextRequest) {
   try {
-    const stats = dataStore.getStatistics();
+    const stats = await unifiedDataStore.getStatistics();
     
     // Get additional statistics
-    const blocks = dataStore.getBlocks();
-    const notifications = dataStore.getNotifications();
-    const recentRequests = dataStore.getRequests()
+    const blocks = await unifiedDataStore.getBlocks();
+    const notifications = await unifiedDataStore.getNotifications();
+    const requests = await unifiedDataStore.getRequests();
+    const recentRequests = requests
       .filter(r => r.status === 'pending')
       .slice(0, 5);
     
-    const emergencies = dataStore.getEmergencies();
+    const emergencies = await unifiedDataStore.getEmergencies();
     const activeEmergencies = emergencies.filter(e => e.status !== 'resolved');
 
     // Block-wise statistics
+    const rooms = await unifiedDataStore.getRooms();
+    const placements = await unifiedDataStore.getStudentPlacements();
+    
     const blockStats = blocks.map(block => {
-      const rooms = dataStore.getRooms().filter(r => r.block === block.block_id);
-      const placements = dataStore.getStudentPlacements().filter(p => p.block === block.block_id);
+      const blockRooms = rooms.filter(r => r.block === block.block_id);
+      const blockPlacements = placements.filter(p => p.block === block.block_id);
       
-      const totalCapacity = rooms.reduce((sum, room) => sum + room.capacity, 0);
-      const currentOccupancy = rooms.reduce((sum, room) => sum + (room.current_occupancy || 0), 0);
+      const totalCapacity = blockRooms.reduce((sum, room) => sum + room.capacity, 0);
+      const currentOccupancy = blockRooms.reduce((sum, room) => sum + (room.current_occupancy || 0), 0);
       
       return {
         block_id: block.block_id,
         reserved_for: block.reserved_for,
-        total_rooms: rooms.length,
-        occupied_rooms: rooms.filter(r => r.status === 'occupied').length,
-        available_rooms: rooms.filter(r => r.status === 'available').length,
+        total_rooms: blockRooms.length,
+        occupied_rooms: blockRooms.filter(r => r.status === 'occupied').length,
+        available_rooms: blockRooms.filter(r => r.status === 'available').length,
         total_capacity: totalCapacity,
         current_occupancy: currentOccupancy,
         occupancy_rate: totalCapacity > 0 ? Math.round((currentOccupancy / totalCapacity) * 100) : 0,
-        students_count: placements.length
+        students_count: blockPlacements.length
       };
     });
 
