@@ -19,8 +19,7 @@ const StudentSchema: Schema = new Schema({
   student_id: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   first_name: {
     type: String,
@@ -70,9 +69,7 @@ const StudentSchema: Schema = new Schema({
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
-// Indexes
-StudentSchema.index({ student_id: 1 });
-StudentSchema.index({ email: 1 });
+// Additional indexes (unique indexes are automatically created)
 StudentSchema.index({ status: 1 });
 StudentSchema.index({ batch: 1 });
 

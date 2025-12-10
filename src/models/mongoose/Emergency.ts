@@ -15,8 +15,7 @@ const EmergencySchema: Schema = new Schema({
   student_id: {
     type: String,
     required: true,
-    ref: 'Student',
-    index: true
+    ref: 'Student'
   },
   type: {
     type: String,

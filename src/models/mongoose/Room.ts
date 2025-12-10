@@ -13,14 +13,12 @@ export interface IRoom extends Document {
 const RoomSchema: Schema = new Schema({
   room_id: {
     type: String,
-    required: true,
-    index: true
+    required: true
   },
   block: {
     type: String,
     required: true,
-    ref: 'Block',
-    index: true
+    ref: 'Block'
   },
   status: {
     type: String,
@@ -41,7 +39,7 @@ const RoomSchema: Schema = new Schema({
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
-// Compound index for room_id + block (unique combination)
+// Indexes
 RoomSchema.index({ room_id: 1, block: 1 }, { unique: true });
 RoomSchema.index({ block: 1 });
 RoomSchema.index({ status: 1 });

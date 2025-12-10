@@ -14,8 +14,7 @@ const BlockSchema: Schema = new Schema({
   block_id: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   disable_group: {
     type: Boolean,
@@ -40,8 +39,7 @@ const BlockSchema: Schema = new Schema({
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
-// Indexes
-BlockSchema.index({ block_id: 1 });
+// Additional indexes (unique indexes are automatically created)
 BlockSchema.index({ status: 1 });
 BlockSchema.index({ reserved_for: 1 });
 

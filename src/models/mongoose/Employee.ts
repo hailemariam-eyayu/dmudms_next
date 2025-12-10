@@ -16,8 +16,7 @@ const EmployeeSchema: Schema = new Schema({
   employee_id: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   first_name: {
     type: String,
@@ -54,9 +53,7 @@ const EmployeeSchema: Schema = new Schema({
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
-// Indexes
-EmployeeSchema.index({ employee_id: 1 });
-EmployeeSchema.index({ email: 1 });
+// Additional indexes (unique indexes are automatically created)
 EmployeeSchema.index({ role: 1 });
 EmployeeSchema.index({ status: 1 });
 

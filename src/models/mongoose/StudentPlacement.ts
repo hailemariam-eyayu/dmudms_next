@@ -16,19 +16,16 @@ const StudentPlacementSchema: Schema = new Schema({
     type: String,
     required: true,
     unique: true,
-    ref: 'Student',
-    index: true
+    ref: 'Student'
   },
   room: {
     type: String,
-    required: true,
-    index: true
+    required: true
   },
   block: {
     type: String,
     required: true,
-    ref: 'Block',
-    index: true
+    ref: 'Block'
   },
   year: {
     type: String,
@@ -48,8 +45,7 @@ const StudentPlacementSchema: Schema = new Schema({
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
-// Indexes
-StudentPlacementSchema.index({ student_id: 1 });
+// Additional indexes (unique indexes are automatically created)
 StudentPlacementSchema.index({ room: 1, block: 1 });
 StudentPlacementSchema.index({ block: 1 });
 StudentPlacementSchema.index({ status: 1 });
