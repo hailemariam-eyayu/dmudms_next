@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import { Users, Edit, Trash2, Plus, Search, UserCheck, UserX } from 'lucide-react';
+import { Users, Edit, Trash2, Plus, Search, UserCheck, UserX, Key, AlertCircle } from 'lucide-react';
 
 interface Employee {
   _id: string;
@@ -24,6 +24,8 @@ export default function EmployeeManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [resetPasswordResult, setResetPasswordResult] = useState<{ employeeId: string, newPassword: string } | null>(null);
 
   const [formData, setFormData] = useState({
     employee_id: '',
@@ -105,12 +107,35 @@ export default function EmployeeManagement() {
       const data = await response.json();
       if (data.success) {
         fetchEmployees();
-        alert('Employee deleted successfully!');
+        setMessage({ type: 'success', text: 'Employee deleted successfully!' });
       } else {
-        alert(data.error || 'Delete failed');
+        setMessage({ type: 'error', text: data.error || 'Delete failed' });
       }
     } catch (error) {
-      alert('Delete failed');
+      setMessage({ type: 'error', text: 'Delete failed' });
+    }
+  };
+
+  const handleResetPassword = async (employeeId: string) => {
+    if (!confirm('Are you sure you want to reset this employee\'s password?')) return;
+    
+    try {
+      const response = await fetch(`/api/employees/${employeeId}/reset-password`, { 
+        method: 'POST' 
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setResetPasswordResult({ employeeId, newPassword: data.newPassword });
+        setMessage({ 
+          type: 'success', 
+          text: `Password reset successfully! New password: ${data.newPassword}` 
+        });
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Password reset failed' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Password reset failed' });
     }
   };
 
@@ -167,6 +192,47 @@ export default function EmployeeManagement() {
             </button>
           </div>
         </div>
+
+        {/* Message */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg flex items-center ${
+            message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+          }`}>
+            <AlertCircle className="h-5 w-5 mr-2" />
+            {message.text}
+          </div>
+        )}
+
+        {/* Password Reset Result */}
+        {resetPasswordResult && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">Password Reset Successful</h3>
+            <div className="flex items-center space-x-3">
+              <span className="text-sm text-blue-700">New password:</span>
+              <code className="bg-white px-3 py-2 rounded border text-lg font-mono text-blue-800">
+                {resetPasswordResult.newPassword}
+              </code>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(resetPasswordResult.newPassword);
+                  alert('Password copied to clipboard!');
+                }}
+                className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Copy
+              </button>
+              <button
+                onClick={() => setResetPasswordResult(null)}
+                className="px-3 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+              >
+                Dismiss
+              </button>
+            </div>
+            <p className="text-sm text-blue-700 mt-2">
+              Please share this password with the employee. They should change it on first login.
+            </p>
+          </div>
+        )}
 
         {/* Search */}
         <div className="mb-6">
@@ -339,18 +405,29 @@ export default function EmployeeManagement() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleEdit(employee)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(employee.employee_id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEdit(employee)}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Edit Employee"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleResetPassword(employee.employee_id)}
+                          className="text-orange-600 hover:text-orange-900"
+                          title="Reset Password"
+                        >
+                          <Key className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(employee.employee_id)}
+                          className="text-red-600 hover:text-red-900"
+                          title="Delete Employee"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

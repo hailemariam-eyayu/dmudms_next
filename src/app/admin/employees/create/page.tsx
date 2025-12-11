@@ -10,6 +10,7 @@ export default function CreateEmployeePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     employee_id: '',
@@ -19,7 +20,8 @@ export default function CreateEmployeePage() {
     role: 'proctor',
     status: 'active',
     phone: '',
-    department: ''
+    department: '',
+    password: ''
   });
 
   if (status === 'loading') {
@@ -54,7 +56,16 @@ export default function CreateEmployeePage() {
       const data = await response.json();
 
       if (data.success) {
-        setMessage({ type: 'success', text: 'Employee created successfully!' });
+        if (data.generatedPassword) {
+          setGeneratedPassword(data.generatedPassword);
+          setMessage({ 
+            type: 'success', 
+            text: `Employee created successfully! Generated password: ${data.generatedPassword}` 
+          });
+        } else {
+          setMessage({ type: 'success', text: 'Employee created successfully!' });
+        }
+        
         // Reset form
         setFormData({
           employee_id: '',
@@ -64,12 +75,16 @@ export default function CreateEmployeePage() {
           role: 'proctor',
           status: 'active',
           phone: '',
-          department: ''
+          department: '',
+          password: ''
         });
-        // Redirect after a short delay
-        setTimeout(() => {
-          router.push('/admin/employees');
-        }, 2000);
+        
+        // Don't auto-redirect if password was generated (let admin copy it)
+        if (!data.generatedPassword) {
+          setTimeout(() => {
+            router.push('/admin/employees');
+          }, 2000);
+        }
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to create employee' });
       }
@@ -109,6 +124,36 @@ export default function CreateEmployeePage() {
           }`}>
             <AlertCircle className="h-5 w-5 mr-2" />
             {message.text}
+          </div>
+        )}
+
+        {/* Generated Password Display */}
+        {generatedPassword && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">Generated Password</h3>
+            <div className="flex items-center space-x-3">
+              <code className="bg-white px-3 py-2 rounded border text-lg font-mono text-blue-800">
+                {generatedPassword}
+              </code>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(generatedPassword);
+                  alert('Password copied to clipboard!');
+                }}
+                className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Copy
+              </button>
+            </div>
+            <p className="text-sm text-blue-700 mt-2">
+              Please share this password with the employee. They should change it on first login.
+            </p>
+            <button
+              onClick={() => router.push('/admin/employees')}
+              className="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Continue to Employee List
+            </button>
           </div>
         )}
 
@@ -231,6 +276,22 @@ export default function CreateEmployeePage() {
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Password (Optional)
+              </label>
+              <input
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Leave empty to auto-generate"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                If left empty, a secure password will be generated automatically
+              </p>
             </div>
 
             <div className="flex justify-end space-x-4 pt-6">

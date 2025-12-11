@@ -143,6 +143,12 @@ class MongoDataStore {
 
   async createEmployee(employeeData: any) {
     await this.init();
+    
+    // Hash the password if provided
+    if (employeeData.password) {
+      employeeData.password = hashPassword(employeeData.password);
+    }
+    
     const employee = new Employee(employeeData);
     return await employee.save();
   }

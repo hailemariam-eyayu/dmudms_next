@@ -52,12 +52,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Generate a secure default password if not provided (matching Laravel pattern)
+    let generatedPassword = null;
+    if (!employeeData.password) {
+      // Generate password using Laravel pattern: last_name + "1234abcd#"
+      generatedPassword = `${employeeData.last_name}1234abcd#`;
+      employeeData.password = generatedPassword;
+    }
+
     const result = await mongoDataStore.createEmployee(employeeData);
     
-    return NextResponse.json({
+    // Return the result with the generated password (for admin to share with employee)
+    const response = {
       success: true,
-      data: result
-    });
+      data: result,
+      ...(generatedPassword && { generatedPassword })
+    };
+    
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error creating employee:', error);
     return NextResponse.json(

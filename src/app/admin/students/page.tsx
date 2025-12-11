@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import { Users, Edit, Trash2, Plus, Search, UserCheck, UserX, CheckCircle, AlertCircle } from 'lucide-react';
+import { Users, Edit, Trash2, Plus, Search, UserCheck, UserX, CheckCircle, AlertCircle, Key } from 'lucide-react';
 
 interface Student {
   _id: string;
@@ -26,6 +26,7 @@ export default function AdminStudentManagement() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [resetPasswordResult, setResetPasswordResult] = useState<{ studentId: string, newPassword: string } | null>(null);
 
   const [formData, setFormData] = useState({
     student_id: '',
@@ -137,6 +138,29 @@ export default function AdminStudentManagement() {
     }
   };
 
+  const handleResetPassword = async (studentId: string) => {
+    if (!confirm('Are you sure you want to reset this student\'s password?')) return;
+    
+    try {
+      const response = await fetch(`/api/students/${studentId}/reset-password`, { 
+        method: 'POST' 
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setResetPasswordResult({ studentId, newPassword: data.newPassword });
+        setMessage({ 
+          type: 'success', 
+          text: `Password reset successfully! New password: ${data.newPassword}` 
+        });
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Password reset failed' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Password reset failed' });
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       student_id: '',
@@ -204,6 +228,37 @@ export default function AdminStudentManagement() {
           }`}>
             <AlertCircle className="h-5 w-5 mr-2" />
             {message.text}
+          </div>
+        )}
+
+        {/* Password Reset Result */}
+        {resetPasswordResult && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">Password Reset Successful</h3>
+            <div className="flex items-center space-x-3">
+              <span className="text-sm text-blue-700">New password:</span>
+              <code className="bg-white px-3 py-2 rounded border text-lg font-mono text-blue-800">
+                {resetPasswordResult.newPassword}
+              </code>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(resetPasswordResult.newPassword);
+                  alert('Password copied to clipboard!');
+                }}
+                className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Copy
+              </button>
+              <button
+                onClick={() => setResetPasswordResult(null)}
+                className="px-3 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+              >
+                Dismiss
+              </button>
+            </div>
+            <p className="text-sm text-blue-700 mt-2">
+              Please share this password with the student. They should change it on first login.
+            </p>
           </div>
         )}
 
@@ -330,12 +385,21 @@ export default function AdminStudentManagement() {
                         <button
                           onClick={() => handleEdit(student)}
                           className="text-blue-600 hover:text-blue-900"
+                          title="Edit Student"
                         >
                           <Edit className="h-4 w-4" />
                         </button>
                         <button
+                          onClick={() => handleResetPassword(student.student_id)}
+                          className="text-orange-600 hover:text-orange-900"
+                          title="Reset Password"
+                        >
+                          <Key className="h-4 w-4" />
+                        </button>
+                        <button
                           onClick={() => handleDelete(student._id)}
                           className="text-red-600 hover:text-red-900"
+                          title="Delete Student"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

@@ -52,9 +52,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Set default password if not provided
+    // Set default password if not provided (matching Laravel pattern)
     if (!studentData.password) {
-      studentData.password = 'default123';
+      studentData.password = `${studentData.last_name}1234abcd#`;
     }
 
     const result = await mongoDataStore.createStudent(studentData);
