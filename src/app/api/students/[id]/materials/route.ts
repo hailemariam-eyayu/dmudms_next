@@ -5,7 +5,7 @@ import mongoDataStore from '@/lib/mongoDataStore';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -17,7 +17,7 @@ export async function GET(
       );
     }
 
-    const studentId = params.id;
+    const { id: studentId } = await params;
 
     // Students can only access their own data, others need appropriate permissions
     if (session.user.role === 'student' && session.user.id !== studentId) {

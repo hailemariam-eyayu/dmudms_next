@@ -5,7 +5,7 @@ import mongoDataStore from '@/lib/mongoDataStore';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -14,7 +14,8 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const block = await mongoDataStore.getBlockById(params.id);
+    const { id } = await params;
+    const block = await mongoDataStore.getBlockById(id);
     
     if (!block) {
       return NextResponse.json({ success: false, error: 'Block not found' }, { status: 404 });
@@ -35,7 +36,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -45,8 +46,9 @@ export async function PUT(
     }
 
     const updateData = await request.json();
+    const { id } = await params;
     
-    const result = await mongoDataStore.updateBlock(params.id, updateData);
+    const result = await mongoDataStore.updateBlock(id, updateData);
     
     return NextResponse.json({
       success: true,
@@ -63,7 +65,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -72,7 +74,8 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    await mongoDataStore.deleteBlock(params.id);
+    const { id } = await params;
+    await mongoDataStore.deleteBlock(id);
     
     return NextResponse.json({
       success: true,
