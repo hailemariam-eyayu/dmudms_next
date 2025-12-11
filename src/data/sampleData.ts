@@ -10,6 +10,19 @@ import {
   Notification 
 } from '@/types';
 
+// Emergency Contact interface
+export interface EmergencyContact {
+  student_id: string;
+  father_name: string;
+  grand_father: string;
+  grand_grand_father: string;
+  mother_name: string;
+  phone: string;
+  region: string;
+  woreda: string;
+  kebele: string;
+}
+
 // Sample Blocks
 export const sampleBlocks: Block[] = [
   {
@@ -68,10 +81,10 @@ export const sampleRooms: Room[] = [
 export const sampleStudents: Student[] = [
   {
     student_id: 'DMU001',
-    first_name: 'John',
-    second_name: 'Michael',
-    last_name: 'Smith',
-    email: 'john.smith@dmu.edu',
+    first_name: 'Abebe',
+    second_name: 'Kebede',
+    last_name: 'Tesfaye',
+    email: 'abebe.tesfaye@dmu.edu',
     gender: 'male',
     batch: '2024',
     disability_status: 'none',
@@ -79,10 +92,10 @@ export const sampleStudents: Student[] = [
   },
   {
     student_id: 'DMU002',
-    first_name: 'Sarah',
-    second_name: 'Jane',
-    last_name: 'Johnson',
-    email: 'sarah.johnson@dmu.edu',
+    first_name: 'Hanan',
+    second_name: 'Mohammed',
+    last_name: 'Ahmed',
+    email: 'hanan.ahmed@dmu.edu',
     gender: 'female',
     batch: '2024',
     disability_status: 'none',
@@ -90,10 +103,10 @@ export const sampleStudents: Student[] = [
   },
   {
     student_id: 'DMU003',
-    first_name: 'Ahmed',
-    second_name: 'Hassan',
-    last_name: 'Ali',
-    email: 'ahmed.ali@dmu.edu',
+    first_name: 'Dawit',
+    second_name: 'Haile',
+    last_name: 'Mariam',
+    email: 'dawit.mariam@dmu.edu',
     gender: 'male',
     batch: '2023',
     disability_status: 'visual',
@@ -101,10 +114,10 @@ export const sampleStudents: Student[] = [
   },
   {
     student_id: 'DMU004',
-    first_name: 'Maria',
-    second_name: 'Elena',
-    last_name: 'Rodriguez',
-    email: 'maria.rodriguez@dmu.edu',
+    first_name: 'Meron',
+    second_name: 'Tadesse',
+    last_name: 'Bekele',
+    email: 'meron.bekele@dmu.edu',
     gender: 'female',
     batch: '2024',
     disability_status: 'none',
@@ -112,13 +125,68 @@ export const sampleStudents: Student[] = [
   },
   {
     student_id: 'DMU005',
-    first_name: 'David',
-    second_name: 'James',
-    last_name: 'Wilson',
-    email: 'david.wilson@dmu.edu',
+    first_name: 'Yohannes',
+    second_name: 'Getachew',
+    last_name: 'Desta',
+    email: 'yohannes.desta@dmu.edu',
     gender: 'male',
     batch: '2023',
     disability_status: 'physical',
+    status: 'active'
+  },
+  {
+    student_id: 'DMU006',
+    first_name: 'Rahel',
+    second_name: 'Alemayehu',
+    last_name: 'Wolde',
+    email: 'rahel.wolde@dmu.edu',
+    gender: 'female',
+    batch: '2024',
+    disability_status: 'none',
+    status: 'active'
+  },
+  {
+    student_id: 'DMU007',
+    first_name: 'Biniam',
+    second_name: 'Tekle',
+    last_name: 'Giorgis',
+    email: 'biniam.giorgis@dmu.edu',
+    gender: 'male',
+    batch: '2023',
+    disability_status: 'none',
+    status: 'active'
+  },
+  {
+    student_id: 'DMU008',
+    first_name: 'Selamawit',
+    second_name: 'Mulugeta',
+    last_name: 'Assefa',
+    email: 'selamawit.assefa@dmu.edu',
+    gender: 'female',
+    batch: '2024',
+    disability_status: 'hearing',
+    status: 'active'
+  },
+  {
+    student_id: 'DMU009',
+    first_name: 'Ephrem',
+    second_name: 'Berhe',
+    last_name: 'Gebremedhin',
+    email: 'ephrem.gebremedhin@dmu.edu',
+    gender: 'male',
+    batch: '2023',
+    disability_status: 'none',
+    status: 'active'
+  },
+  {
+    student_id: 'DMU010',
+    first_name: 'Bethlehem',
+    second_name: 'Teshome',
+    last_name: 'Negash',
+    email: 'bethlehem.negash@dmu.edu',
+    gender: 'female',
+    batch: '2024',
+    disability_status: 'none',
     status: 'active'
   }
 ];
@@ -127,54 +195,113 @@ export const sampleStudents: Student[] = [
 export const sampleEmployees: Employee[] = [
   {
     employee_id: 'EMP001',
-    first_name: 'Dr. Robert',
-    last_name: 'Anderson',
-    email: 'robert.anderson@dmu.edu',
+    first_name: 'Dr. Alemayehu',
+    last_name: 'Tadesse',
+    email: 'alemayehu.tadesse@dmu.edu',
+    gender: 'male',
+    phone: '+251911234567',
+    department: 'Administration',
     role: 'admin',
     status: 'active'
   },
   {
     employee_id: 'EMP002',
-    first_name: 'Lisa',
-    last_name: 'Thompson',
-    email: 'lisa.thompson@dmu.edu',
+    first_name: 'Aster',
+    last_name: 'Bekele',
+    email: 'aster.bekele@dmu.edu',
+    gender: 'female',
+    phone: '+251911234568',
+    department: 'Student Affairs',
     role: 'directorate',
     status: 'active'
   },
   {
     employee_id: 'EMP003',
-    first_name: 'Michael',
-    last_name: 'Brown',
-    email: 'michael.brown@dmu.edu',
+    first_name: 'Mulugeta',
+    last_name: 'Haile',
+    email: 'mulugeta.haile@dmu.edu',
+    gender: 'male',
+    phone: '+251911234569',
+    department: 'Dormitory Management',
     role: 'coordinator',
     status: 'active'
   },
   {
     employee_id: 'EMP004',
-    first_name: 'Jennifer',
-    last_name: 'Davis',
-    email: 'jennifer.davis@dmu.edu',
+    first_name: 'Tigist',
+    last_name: 'Wolde',
+    email: 'tigist.wolde@dmu.edu',
+    gender: 'female',
+    phone: '+251911234570',
+    department: 'Block A Supervision',
     role: 'proctor',
     status: 'active'
   },
   {
     employee_id: 'EMP005',
-    first_name: 'James',
-    last_name: 'Miller',
-    email: 'james.miller@dmu.edu',
+    first_name: 'Getachew',
+    last_name: 'Mekonen',
+    email: 'getachew.mekonen@dmu.edu',
+    gender: 'male',
+    phone: '+251911234571',
+    department: 'Registration Office',
     role: 'registrar',
     status: 'active'
   },
   {
-    employee_id: 'EMP0010',
-    first_name: 'Alex',
-    last_name: 'Johnson',
-    email: 'alex.johnson@dmu.edu',
+    employee_id: 'EMP006',
+    first_name: 'Hiwot',
+    last_name: 'Tesfaye',
+    email: 'hiwot.tesfaye@dmu.edu',
+    gender: 'female',
+    phone: '+251911234572',
+    department: 'Block B Supervision',
+    role: 'proctor',
+    status: 'active'
+  },
+  {
+    employee_id: 'EMP007',
+    first_name: 'Bereket',
+    last_name: 'Assefa',
+    email: 'bereket.assefa@dmu.edu',
     gender: 'male',
+    phone: '+251911234573',
+    department: 'Block C Supervision',
+    role: 'proctor',
+    status: 'active'
+  },
+  {
+    employee_id: 'EMP008',
+    first_name: 'Seble',
+    last_name: 'Girma',
+    email: 'seble.girma@dmu.edu',
+    gender: 'female',
+    phone: '+251911234574',
+    department: 'Proctor Management',
+    role: 'proctor_manager',
+    status: 'active'
+  },
+  {
+    employee_id: 'EMP009',
+    first_name: 'Tekle',
+    last_name: 'Negash',
+    email: 'tekle.negash@dmu.edu',
+    gender: 'male',
+    phone: '+251911234575',
+    department: 'Maintenance',
+    role: 'maintainer',
+    status: 'active'
+  },
+  {
+    employee_id: 'EMP0010',
+    first_name: 'Almaz',
+    last_name: 'Desta',
+    email: 'almaz.desta@dmu.edu',
+    gender: 'female',
+    phone: '+251911234576',
+    department: 'Student Coordination',
     role: 'coordinator',
-    status: 'active',
-    phone: '+251911123456',
-    department: 'Student Affairs'
+    status: 'active'
   }
 ];
 
@@ -285,6 +412,65 @@ export const sampleEmergencies: Emergency[] = [
     description: 'Suspicious person seen near Block A',
     status: 'in_progress',
     reported_date: '2024-12-09'
+  }
+];
+
+// Sample Emergency Contacts
+export const sampleEmergencyContacts: EmergencyContact[] = [
+  {
+    student_id: 'DMU001',
+    father_name: 'Kebede',
+    grand_father: 'Tesfaye',
+    grand_grand_father: 'Wolde',
+    mother_name: 'Almaz Haile',
+    phone: '+251911111111',
+    region: 'Amhara',
+    woreda: 'Bahir Dar',
+    kebele: '01'
+  },
+  {
+    student_id: 'DMU002',
+    father_name: 'Mohammed',
+    grand_father: 'Ahmed',
+    grand_grand_father: 'Hassan',
+    mother_name: 'Fatima Ibrahim',
+    phone: '+251911111112',
+    region: 'Oromia',
+    woreda: 'Adama',
+    kebele: '02'
+  },
+  {
+    student_id: 'DMU003',
+    father_name: 'Haile',
+    grand_father: 'Mariam',
+    grand_grand_father: 'Gebre',
+    mother_name: 'Tsehay Bekele',
+    phone: '+251911111113',
+    region: 'Tigray',
+    woreda: 'Mekelle',
+    kebele: '03'
+  },
+  {
+    student_id: 'DMU004',
+    father_name: 'Tadesse',
+    grand_father: 'Bekele',
+    grand_grand_father: 'Alemu',
+    mother_name: 'Birtukan Desta',
+    phone: '+251911111114',
+    region: 'SNNPR',
+    woreda: 'Hawassa',
+    kebele: '04'
+  },
+  {
+    student_id: 'DMU005',
+    father_name: 'Getachew',
+    grand_father: 'Desta',
+    grand_grand_father: 'Tekle',
+    mother_name: 'Meseret Girma',
+    phone: '+251911111115',
+    region: 'Addis Ababa',
+    woreda: 'Bole',
+    kebele: '05'
   }
 ];
 

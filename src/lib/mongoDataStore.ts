@@ -32,22 +32,54 @@ class MongoDataStore {
     this.initialized = true;
   }
 
+  async forceReseed() {
+    await connectDB();
+    this.initialized = false; // Reset initialization flag
+    await this.seedDataIfEmpty();
+    this.initialized = true;
+  }
+
   private async seedDataIfEmpty() {
     try {
       // Check if data already exists
       const studentCount = await Student.countDocuments();
-      if (studentCount > 0) return; // Data already exists
+      const shouldReseed = !this.initialized || studentCount === 0;
+      
+      if (studentCount > 0 && this.initialized) {
+        return; // Data already exists and we're not forcing a reseed
+      }
+
+      if (studentCount > 0) {
+        console.log('Clearing existing data for fresh seed...');
+        // Clear existing data
+        await Student.deleteMany({});
+        await Employee.deleteMany({});
+        await Block.deleteMany({});
+        await Room.deleteMany({});
+        await StudentPlacement.deleteMany({});
+        await Request.deleteMany({});
+        await Emergency.deleteMany({});
+        await Notification.deleteMany({});
+        
+        // Also clear emergency contacts if the model exists
+        try {
+          const EmergencyContact = (await import('@/models/mongoose/EmergencyContact')).default;
+          await EmergencyContact.deleteMany({});
+        } catch (error) {
+          console.log('EmergencyContact model not available, skipping...');
+        }
+      }
 
       console.log('Seeding database with sample data...');
 
-      // Seed Employees with hashed passwords
+      // Seed Employees with hashed passwords (all use "default123")
       const employees = sampleEmployees.map(emp => ({
         ...emp,
         password: hashPassword('default123')
       }));
       await Employee.insertMany(employees);
 
-      // Seed Students with hashed passwords
+      // Seed Students with hashed passwords (all use "default123")
       const students = sampleStudents.map(student => ({
         ...student,
         password: hashPassword('default123')
@@ -71,6 +103,16 @@ class MongoDataStore {
 
       // Seed Notifications
       await Notification.insertMany(sampleNotifications);
+
+      // Seed Emergency Contacts
+      try {
+        const EmergencyContact = (await import('@/models/mongoose/EmergencyContact')).default;
+        const { sampleEmergencyContacts } = await import('@/data/sampleData');
+        await EmergencyContact.insertMany(sampleEmergencyContacts);
+        console.log('Emergency contacts seeded successfully!');
+      } catch (error) {
+        console.log('Could not seed emergency contacts:', error);
+      }
 
       console.log('Database seeded successfully!');
     } catch (error) {

@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import { Users, UserPlus, Settings, BarChart3, Shield, Database } from 'lucide-react';
+import { Users, UserPlus, Settings, BarChart3, Shield, Database, RefreshCw, AlertCircle } from 'lucide-react';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [reseeding, setReseeding] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -31,6 +33,38 @@ export default function AdminDashboard() {
       console.error('Error fetching stats:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReseedDatabase = async () => {
+    if (!confirm('Are you sure you want to reseed the database? This will delete ALL existing data and replace it with fresh sample data. All users will have password: default123')) {
+      return;
+    }
+
+    setReseeding(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/admin/reseed-database', {
+        method: 'POST'
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage({ type: 'success', text: data.message });
+        // Refresh stats after reseeding
+        setTimeout(() => {
+          fetchStats();
+        }, 2000);
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to reseed database' });
+      }
+    } catch (error) {
+      console.error('Error reseeding database:', error);
+      setMessage({ type: 'error', text: 'Failed to reseed database' });
+    } finally {
+      setReseeding(false);
     }
   };
 
@@ -58,6 +92,16 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Message */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg flex items-center ${
+            message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+          }`}>
+            <AlertCircle className="h-5 w-5 mr-2" />
+            {message.text}
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -111,6 +155,36 @@ export default function AdminDashboard() {
                 </a>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Database Management */}
+        <div className="mb-8">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+              <Database className="h-5 w-5 mr-2" />
+              Database Management
+            </h2>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <div className="flex items-start">
+                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 mr-2" />
+                <div>
+                  <h3 className="text-sm font-medium text-yellow-800">Warning</h3>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    Reseeding will delete ALL existing data and replace it with fresh sample data. 
+                    All users will have password: <strong>default123</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={handleReseedDatabase}
+              disabled={reseeding}
+              className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${reseeding ? 'animate-spin' : ''}`} />
+              {reseeding ? 'Reseeding Database...' : 'Reseed Database with Sample Data'}
+            </button>
           </div>
         </div>
 

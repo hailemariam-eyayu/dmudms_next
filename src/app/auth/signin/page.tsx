@@ -140,12 +140,14 @@ export default function SignIn() {
 
             {/* Demo Credentials */}
             <div className="mt-6 p-4 bg-gray-50 rounded-md">
-              <h4 className="text-sm font-medium text-gray-900 mb-2">Demo Credentials:</h4>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Demo Credentials (All passwords: default123):</h4>
               <div className="text-xs text-gray-600 space-y-1">
                 <div><strong>Admin:</strong> EMP001 / default123</div>
                 <div><strong>Directorate:</strong> EMP002 / default123</div>
-                <div><strong>Coordinator:</strong> EMP0010 / default123</div>
+                <div><strong>Coordinator:</strong> EMP003 / default123</div>
+                <div><strong>Coordinator 2:</strong> EMP0010 / default123</div>
                 <div><strong>Proctor:</strong> EMP004 / default123</div>
+                <div><strong>Registrar:</strong> EMP005 / default123</div>
                 <div><strong>Student:</strong> DMU001 / default123</div>
               </div>
             </div>
