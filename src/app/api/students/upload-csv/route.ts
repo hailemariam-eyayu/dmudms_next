@@ -2,7 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import mongoDataStore from '@/lib/mongoDataStore';
-import { parse } from 'csv-parse/sync';
+
+// Simple CSV parser function
+function parseCSV(csvText: string): any[] {
+  const lines = csvText.trim().split('\n');
+  if (lines.length === 0) return [];
+  
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+  const records = [];
+  
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+    if (values.length === headers.length) {
+      const record: any = {};
+      headers.forEach((header, index) => {
+        record[header] = values[index];
+      });
+      records.push(record);
+    }
+  }
+  
+  return records;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,11 +57,7 @@ export async function POST(request: NextRequest) {
     // Parse CSV
     let records;
     try {
-      records = parse(fileContent, {
-        columns: true,
-        skip_empty_lines: true,
-        trim: true
-      });
+      records = parseCSV(fileContent);
     } catch (error) {
       return NextResponse.json(
         { success: false, error: 'Invalid CSV format' },

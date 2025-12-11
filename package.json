@@ -30,6 +30,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
+    "csv-parse": "^6.1.0",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.556.0",
     "mongoose": "^9.0.1",
