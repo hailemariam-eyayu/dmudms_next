@@ -33,8 +33,14 @@ interface Block {
   proctor_id?: string;
   capacity: number;
   occupied: number;
-  gender: string;
-  status: string;
+  gender: 'male' | 'female';
+  status: 'active' | 'inactive' | 'maintenance';
+  reserved_for: 'male' | 'female' | 'mixed' | 'disabled';
+  floors: number;
+  rooms_per_floor: number;
+  room_capacity: number;
+  disable_group: boolean;
+  location?: string;
 }
 
 export default function AssignProctors() {
@@ -160,8 +166,8 @@ export default function AssignProctors() {
 
   const filteredBlocks = blocks.filter(block => {
     const matchesSearch = 
-      block.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      block.block_id.toLowerCase().includes(searchTerm.toLowerCase());
+      (block.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (block.block_id || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesGender = filterGender === 'all' || block.gender === filterGender;
     

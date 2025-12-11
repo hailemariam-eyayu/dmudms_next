@@ -179,7 +179,7 @@ export default function BlockRoomsPage({ params }: { params: Promise<{ blockId: 
               }, {} as Record<number, any[]>)
             )
             .sort(([a], [b]) => parseInt(a) - parseInt(b))
-            .map(([floor, floorRooms]) => (
+            .map(([floor, floorRooms]: [string, any[]]) => (
               <div key={floor} className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
                   <div className="flex items-center justify-between">
