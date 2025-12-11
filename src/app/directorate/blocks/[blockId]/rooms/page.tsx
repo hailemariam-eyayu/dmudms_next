@@ -170,16 +170,16 @@ export default function BlockRoomsPage({ params }: { params: Promise<{ blockId: 
         <div className="space-y-6">
           {rooms.length > 0 ? (
             // Group rooms by floor
-            Object.entries(
+            (Object.entries(
               rooms.reduce((acc, room) => {
                 const floor = room.floor || 0;
                 if (!acc[floor]) acc[floor] = [];
                 acc[floor].push(room);
                 return acc;
               }, {} as Record<number, any[]>)
-            )
+            ) as [string, any[]][])
             .sort(([a], [b]) => parseInt(a) - parseInt(b))
-            .map(([floor, floorRooms]: [string, any[]]) => (
+            .map(([floor, floorRooms]) => (
               <div key={floor} className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
                   <div className="flex items-center justify-between">
