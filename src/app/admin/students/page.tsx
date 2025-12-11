@@ -13,8 +13,8 @@ interface Student {
   last_name: string;
   email: string;
   gender: string;
+  batch: string;
   status: 'active' | 'inactive';
-  citizenship: string;
   disability_status: string;
 }
 
@@ -34,8 +34,8 @@ export default function AdminStudentManagement() {
     last_name: '',
     email: '',
     gender: 'male',
+    batch: '',
     status: 'active' as 'active' | 'inactive',
-    citizenship: '',
     disability_status: 'none'
   });
 
@@ -108,8 +108,8 @@ export default function AdminStudentManagement() {
       last_name: student.last_name,
       email: student.email,
       gender: student.gender,
+      batch: student.batch,
       status: student.status,
-      citizenship: student.citizenship,
       disability_status: student.disability_status
     });
     setShowCreateForm(true);
@@ -145,8 +145,8 @@ export default function AdminStudentManagement() {
       last_name: '',
       email: '',
       gender: 'male',
+      batch: '',
       status: 'active',
-      citizenship: '',
       disability_status: 'none'
     });
   };
@@ -155,7 +155,8 @@ export default function AdminStudentManagement() {
     student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.student_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.email.toLowerCase().includes(searchTerm.toLowerCase())
+    student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.batch.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (status === 'loading' || loading) {
@@ -247,7 +248,7 @@ export default function AdminStudentManagement() {
             <Search className="h-5 w-5 absolute left-3 top-3 text-gray-400" />
             <input
               type="text"
-              placeholder="Search students by name, ID, or email..."
+              placeholder="Search students by name, ID, email, or batch..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -277,6 +278,9 @@ export default function AdminStudentManagement() {
                     Gender
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Batch
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -292,7 +296,7 @@ export default function AdminStudentManagement() {
                         <div className="text-sm font-medium text-gray-900">
                           {student.first_name} {student.second_name} {student.last_name}
                         </div>
-                        <div className="text-sm text-gray-500">{student.citizenship}</div>
+                        <div className="text-sm text-gray-500">Batch: {student.batch}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -303,6 +307,9 @@ export default function AdminStudentManagement() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
                       {student.gender}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {student.batch}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -456,12 +463,13 @@ export default function AdminStudentManagement() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Citizenship</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Batch</label>
                   <input
                     type="text"
-                    value={formData.citizenship}
-                    onChange={(e) => setFormData({ ...formData, citizenship: e.target.value })}
+                    value={formData.batch}
+                    onChange={(e) => setFormData({ ...formData, batch: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., 2024, Batch-15, etc."
                     required
                   />
                 </div>
