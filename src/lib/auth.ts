@@ -5,7 +5,7 @@ import { Employee, Student } from '@/types';
 import unifiedDataStore from './unifiedDataStore';
 
 // Define user roles
-export type UserRole = 'admin' | 'directorate' | 'coordinator' | 'proctor' | 'proctor_manager' | 'registrar' | 'maintainer' | 'student';
+export type UserRole = 'admin' | 'directorate' | 'coordinator' | 'proctor' | 'registrar' | 'maintainer' | 'student';
 
 // Extended user type for NextAuth
 export interface AuthUser {
@@ -18,10 +18,9 @@ export interface AuthUser {
 
 // Role hierarchy for permissions
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
-  admin: 8,
-  directorate: 7,
-  coordinator: 6,
-  proctor_manager: 5,
+  admin: 7,
+  directorate: 6,
+  coordinator: 5,
   registrar: 4,
   proctor: 3,
   maintainer: 2,
@@ -30,17 +29,17 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
 
 // Route permissions
 export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
-  '/dashboard': ['admin', 'directorate', 'coordinator', 'proctor_manager', 'proctor', 'registrar', 'student'],
-  '/students': ['admin', 'directorate', 'proctor_manager', 'registrar'],
+  '/dashboard': ['admin', 'directorate', 'coordinator', 'proctor', 'registrar', 'student'],
+  '/students': ['admin', 'directorate', 'coordinator', 'registrar'],
   '/students/create': ['admin', 'registrar'],
-  '/rooms': ['admin', 'directorate', 'coordinator', 'proctor_manager'],
-  '/blocks': ['admin', 'directorate', 'coordinator', 'proctor_manager'],
-  '/placements': ['admin', 'directorate', 'coordinator', 'proctor_manager'],
-  '/requests': ['admin', 'directorate', 'proctor_manager', 'proctor', 'student'],
-  '/reports': ['admin', 'directorate', 'proctor_manager'],
+  '/rooms': ['admin', 'directorate', 'coordinator'],
+  '/blocks': ['admin', 'directorate', 'coordinator'],
+  '/placements': ['admin', 'directorate', 'coordinator'],
+  '/requests': ['admin', 'directorate', 'coordinator', 'proctor', 'student'],
+  '/reports': ['admin', 'directorate', 'coordinator'],
   '/employees': ['admin'],
-  '/emergency': ['admin', 'directorate', 'proctor_manager', 'proctor', 'student'],
-  '/notifications': ['admin', 'directorate', 'proctor_manager', 'registrar']
+  '/emergency': ['admin', 'directorate', 'coordinator', 'proctor', 'student'],
+  '/notifications': ['admin', 'directorate', 'coordinator', 'registrar']
 };
 
 // Authentication helper functions

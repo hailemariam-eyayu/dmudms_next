@@ -141,10 +141,9 @@ export default function CreateEmployeePage() {
                   required
                 >
                   <option value="proctor">Proctor</option>
-                  <option value="proctor_manager">Proctor Manager</option>
+                  <option value="coordinator">Coordinator</option>
                   <option value="admin">Admin</option>
                   <option value="directorate">Directorate</option>
-                  <option value="coordinator">Coordinator</option>
                   <option value="registrar">Registrar</option>
                   <option value="maintainer">Maintainer</option>
                 </select>

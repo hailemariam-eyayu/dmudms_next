@@ -48,15 +48,15 @@ export default function RoleBasedNavigation() {
           { name: 'Emergencies', href: '/emergency', icon: AlertTriangle }
         ];
       
-      case 'proctor_manager':
+      case 'coordinator':
         return [
-          { name: 'Dashboard', href: '/proctor-manager', icon: Home },
-          { name: 'Manage Proctors', href: '/proctor-manager/proctors', icon: UserCheck },
+          { name: 'Dashboard', href: '/coordinator', icon: Home },
+          { name: 'Manage Proctors', href: '/coordinator/proctors', icon: UserCheck },
           { name: 'Block Assignments', href: '/directorate/proctors', icon: Building },
-          { name: 'All Students', href: '/proctor-manager/students', icon: Users },
+          { name: 'All Students', href: '/admin/students', icon: Users },
           { name: 'Materials', href: '/proctor/materials', icon: Package },
           { name: 'Requests', href: '/proctor/requests', icon: ClipboardList },
-          { name: 'Reports', href: '/proctor-manager/reports', icon: BarChart3 }
+          { name: 'Reports', href: '/coordinator/reports', icon: BarChart3 }
         ];
 
       case 'proctor':

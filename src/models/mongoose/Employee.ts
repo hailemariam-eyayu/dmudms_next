@@ -5,7 +5,7 @@ export interface IEmployee extends Document {
   first_name: string;
   last_name: string;
   email: string;
-  role: 'admin' | 'directorate' | 'coordinator' | 'proctor' | 'proctor_manager' | 'registrar' | 'maintainer';
+  role: 'admin' | 'directorate' | 'coordinator' | 'proctor' | 'registrar' | 'maintainer';
   status: 'active' | 'inactive';
   password?: string;
   created_at: Date;
@@ -37,7 +37,7 @@ const EmployeeSchema: Schema = new Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'directorate', 'coordinator', 'proctor', 'proctor_manager', 'registrar', 'maintainer'],
+    enum: ['admin', 'directorate', 'coordinator', 'proctor', 'registrar', 'maintainer'],
     required: true
   },
   status: {
