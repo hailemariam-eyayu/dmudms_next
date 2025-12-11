@@ -41,7 +41,7 @@ export default function AssignProctors() {
   const { data: session, status } = useSession();
   const [proctors, setProctors] = useState<Proctor[]>([]);
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [assignments, setAssignments] = useState<{[blockId: string]: string}>({});
+  const [assignments, setAssignments] = useState<{[blockId: string]: string | undefined}>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,7 +82,7 @@ export default function AssignProctors() {
         setBlocks(blockList);
         
         // Initialize assignments with current proctor assignments
-        const currentAssignments: {[blockId: string]: string} = {};
+        const currentAssignments: {[blockId: string]: string | undefined} = {};
         blockList.forEach((block: Block) => {
           if (block.proctor_id) {
             currentAssignments[block.block_id] = block.proctor_id;
@@ -139,7 +139,7 @@ export default function AssignProctors() {
   };
 
   const resetAssignments = () => {
-    const currentAssignments: {[blockId: string]: string} = {};
+    const currentAssignments: {[blockId: string]: string | undefined} = {};
     blocks.forEach((block: Block) => {
       if (block.proctor_id) {
         currentAssignments[block.block_id] = block.proctor_id;
@@ -155,7 +155,7 @@ export default function AssignProctors() {
   };
 
   const getProctorAssignmentCount = (proctorId: string) => {
-    return Object.values(assignments).filter(id => id === proctorId).length;
+    return Object.values(assignments).filter(id => id && id === proctorId).length;
   };
 
   const filteredBlocks = blocks.filter(block => {
