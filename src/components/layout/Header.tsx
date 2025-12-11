@@ -13,19 +13,57 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
-  const navigationItems = [
-    { label: 'Dashboard', href: '/dashboard', roles: ['admin', 'directorate', 'coordinator', 'proctor', 'registrar', 'student'] },
-    { label: 'Students', href: '/students', roles: ['admin', 'directorate', 'registrar'] },
-    { label: 'Rooms', href: '/rooms', roles: ['admin', 'directorate', 'coordinator'] },
-    { label: 'Blocks', href: '/blocks', roles: ['admin', 'directorate', 'coordinator'] },
-    { label: 'Placements', href: '/placements', roles: ['admin', 'directorate', 'coordinator'] },
-    { label: 'Requests', href: '/requests', roles: ['admin', 'directorate', 'proctor', 'student'] },
-    { label: 'Reports', href: '/reports', roles: ['admin', 'directorate'] },
-  ];
+  const getNavigationItems = () => {
+    switch (userRole) {
+      case 'admin':
+        return [
+          { label: 'Dashboard', href: '/admin' },
+          { label: 'Students', href: '/admin/students' },
+          { label: 'Employees', href: '/admin/employees' },
+          { label: 'Placements', href: '/placements' },
+          { label: 'Reports', href: '/admin/reports' },
+          { label: 'Settings', href: '/admin/settings' }
+        ];
+      
+      case 'directorate':
+        return [
+          { label: 'Dashboard', href: '/directorate' },
+          { label: 'Students', href: '/admin/students' },
+          { label: 'Proctors', href: '/directorate/proctors' },
+          { label: 'Blocks & Rooms', href: '/directorate/blocks' },
+          { label: 'Placements', href: '/placements' },
+          { label: 'Requests', href: '/requests' },
+          { label: 'Emergencies', href: '/emergency' }
+        ];
+      
+      case 'proctor':
+        return [
+          { label: 'Dashboard', href: '/proctor' },
+          { label: 'My Students', href: '/proctor/students' },
+          { label: 'Materials', href: '/proctor/materials' },
+          { label: 'Requests', href: '/proctor/requests' },
+          { label: 'Emergencies', href: '/proctor/emergencies' }
+        ];
+      
+      case 'student':
+        return [
+          { label: 'Dashboard', href: '/student' },
+          { label: 'My Room', href: '/student/placement' },
+          { label: 'Requests', href: '/student/requests' },
+          { label: 'Materials', href: '/student/materials' },
+          { label: 'Emergency', href: '/student/emergency' }
+        ];
+      
+      default:
+        return [
+          { label: 'Dashboard', href: '/dashboard' }
+        ];
+    }
+  };
 
-  const visibleItems = navigationItems.filter(item => 
-    item.roles.includes(userRole) || userRole === 'admin'
-  );
+  const navigationItems = getNavigationItems();
+
+  const visibleItems = navigationItems;
 
   return (
     <header className="bg-white shadow-sm border-b">
