@@ -23,6 +23,7 @@ interface Student {
   email: string;
   gender: 'male' | 'female';
   batch: string;
+  disability_status: 'none' | 'physical' | 'visual' | 'hearing' | 'other';
   status: 'active' | 'inactive';
 }
 
@@ -30,10 +31,31 @@ interface Student {
 function UnassignedStudents({ onRefresh }: { onRefresh: () => void }) {
   const [unassignedStudents, setUnassignedStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showManualAssign, setShowManualAssign] = useState<string | null>(null);
+  const [blocks, setBlocks] = useState<any[]>([]);
+  const [rooms, setRooms] = useState<any[]>([]);
 
   useEffect(() => {
     fetchUnassignedStudents();
+    fetchBlocksAndRooms();
   }, []);
+
+  const fetchBlocksAndRooms = async () => {
+    try {
+      const [blocksResponse, roomsResponse] = await Promise.all([
+        fetch('/api/blocks'),
+        fetch('/api/rooms')
+      ]);
+      
+      const blocksData = await blocksResponse.json();
+      const roomsData = await roomsResponse.json();
+      
+      if (blocksData.success) setBlocks(blocksData.data);
+      if (roomsData.success) setRooms(roomsData.data);
+    } catch (error) {
+      console.error('Error fetching blocks and rooms:', error);
+    }
+  };
 
   const fetchUnassignedStudents = async () => {
     try {
@@ -66,13 +88,12 @@ function UnassignedStudents({ onRefresh }: { onRefresh: () => void }) {
   const handleAssignStudent = async (studentId: string) => {
     try {
       // For now, just trigger auto-assignment for this specific student
-      // In a full implementation, you'd show a room selection dialog
       const response = await fetch('/api/placements', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'auto_assign' }),
+        body: JSON.stringify({ action: 'auto_assign', student_id: studentId }),
       });
       
       const data = await response.json();
@@ -86,6 +107,58 @@ function UnassignedStudents({ onRefresh }: { onRefresh: () => void }) {
     } catch (error) {
       alert('Failed to assign student');
     }
+  };
+
+  const handleManualAssign = async (studentId: string, blockId: string, roomId: string) => {
+    try {
+      const response = await fetch('/api/placements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          action: 'manual_assign',
+          student_id: studentId,
+          block_id: blockId,
+          room_id: roomId
+        }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        alert('Student assigned successfully!');
+        setShowManualAssign(null);
+        fetchUnassignedStudents();
+        onRefresh();
+      } else {
+        alert(data.error || 'Failed to assign student');
+      }
+    } catch (error) {
+      alert('Failed to assign student');
+    }
+  };
+
+  const getAvailableRoomsForStudent = (student: Student) => {
+    return rooms.filter(room => {
+      const block = blocks.find(b => b.block_id === room.block);
+      if (!block) return false;
+      
+      // Gender matching
+      if (block.reserved_for !== student.gender) return false;
+      
+      // Room availability
+      if (room.status !== 'available' || room.current_occupancy >= room.capacity) return false;
+      
+      // Disability accessibility logic
+      if (student.disability_status !== 'none') {
+        // Students with disabilities need accessible rooms (ground floor)
+        return room.disability_accessible;
+      } else {
+        // Normal students can use any available room
+        // Including non-ground floors in disability blocks
+        return true;
+      }
+    });
   };
 
   if (loading) {
@@ -115,6 +188,7 @@ function UnassignedStudents({ onRefresh }: { onRefresh: () => void }) {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disability Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
@@ -129,23 +203,226 @@ function UnassignedStudents({ onRefresh }: { onRefresh: () => void }) {
                   {`${student.first_name} ${student.second_name || ''} ${student.last_name}`.trim()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {student.gender}
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    student.gender === 'male' ? 'bg-blue-100 text-blue-800' : 'bg-pink-100 text-pink-800'
+                  }`}>
+                    {student.gender}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    student.disability_status === 'none' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+                  }`}>
+                    {student.disability_status === 'none' ? 'None' : student.disability_status}
+                  </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {student.batch}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={() => handleAssignStudent(student.student_id)}
-                    className="text-blue-600 hover:text-blue-900"
-                  >
-                    Auto Assign
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleAssignStudent(student.student_id)}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      Auto Assign
+                    </button>
+                    <button
+                      onClick={() => setShowManualAssign(student.student_id)}
+                      className="text-green-600 hover:text-green-900"
+                    >
+                      Manual Assign
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Manual Assignment Modal */}
+      {showManualAssign && (
+        <ManualAssignmentModal
+          student={unassignedStudents.find(s => s.student_id === showManualAssign)!}
+          availableRooms={getAvailableRoomsForStudent(unassignedStudents.find(s => s.student_id === showManualAssign)!)}
+          blocks={blocks}
+          onClose={() => setShowManualAssign(null)}
+          onAssign={handleManualAssign}
+        />
+      )}
+    </div>
+  );
+}
+
+// Manual Assignment Modal Component
+function ManualAssignmentModal({ 
+  student, 
+  availableRooms, 
+  blocks, 
+  onClose, 
+  onAssign 
+}: { 
+  student: Student;
+  availableRooms: any[];
+  blocks: any[];
+  onClose: () => void;
+  onAssign: (studentId: string, blockId: string, roomId: string) => void;
+}) {
+  const [selectedBlock, setSelectedBlock] = useState<string>('');
+  const [selectedRoom, setSelectedRoom] = useState<string>('');
+
+  const availableBlocks = blocks.filter(block => 
+    block.reserved_for === student.gender && 
+    availableRooms.some(room => room.block === block.block_id)
+  );
+
+  const roomsInSelectedBlock = availableRooms.filter(room => room.block === selectedBlock);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedBlock && selectedRoom) {
+      onAssign(student.student_id, selectedBlock, selectedRoom);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900">Manual Room Assignment</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Student Info */}
+        <div className="bg-gray-50 p-4 rounded-lg mb-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Student Information</h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-600">Student ID:</span>
+              <span className="ml-2 font-medium">{student.student_id}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Name:</span>
+              <span className="ml-2 font-medium">
+                {`${student.first_name} ${student.second_name || ''} ${student.last_name}`.trim()}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-600">Gender:</span>
+              <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${
+                student.gender === 'male' ? 'bg-blue-100 text-blue-800' : 'bg-pink-100 text-pink-800'
+              }`}>
+                {student.gender}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-600">Disability Status:</span>
+              <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${
+                student.disability_status === 'none' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+              }`}>
+                {student.disability_status === 'none' ? 'None' : student.disability_status}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-600">Batch:</span>
+              <span className="ml-2 font-medium">{student.batch}</span>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Block Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Block
+            </label>
+            <select
+              value={selectedBlock}
+              onChange={(e) => {
+                setSelectedBlock(e.target.value);
+                setSelectedRoom(''); // Reset room selection
+              }}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Choose a block...</option>
+              {availableBlocks.map((block) => (
+                <option key={block.block_id} value={block.block_id}>
+                  {block.block_id} - {block.name} ({block.reserved_for})
+                  {block.disable_group && ' - Disability Accessible'}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Room Selection */}
+          {selectedBlock && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Room
+              </label>
+              <select
+                value={selectedRoom}
+                onChange={(e) => setSelectedRoom(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Choose a room...</option>
+                {roomsInSelectedBlock.map((room) => (
+                  <option key={room.room_id} value={room.room_id}>
+                    {room.room_number} (Floor {room.floor}) - 
+                    {room.current_occupancy}/{room.capacity} occupied
+                    {room.disability_accessible && ' - Accessible'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Assignment Rules Info */}
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h4 className="text-sm font-medium text-blue-900 mb-2">Assignment Rules</h4>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• Students can only be assigned to blocks matching their gender</li>
+              <li>• Students with disabilities require accessible rooms (ground floor)</li>
+              <li>• Normal students can use any available room, including upper floors in disability blocks</li>
+              <li>• Room capacity must not be exceeded</li>
+            </ul>
+          </div>
+
+          {availableRooms.length === 0 && (
+            <div className="bg-red-50 p-4 rounded-lg">
+              <p className="text-red-800 text-sm">
+                No available rooms found for this student. Please check room availability or create new blocks.
+              </p>
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!selectedBlock || !selectedRoom}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Assign Room
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

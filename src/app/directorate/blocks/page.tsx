@@ -615,7 +615,8 @@ function EditBlockModal({ block, onClose, onSubmit }: { block: any, onClose: () 
     status: block.status || 'active',
     disable_group: block.disable_group || false,
     location: block.location || '',
-    proctor_id: block.proctor_id || ''
+    proctor_id: block.proctor_id || '',
+    reserved_for: block.reserved_for || block.gender || 'male'
   });
 
   const [loading, setLoading] = useState(false);
@@ -666,6 +667,21 @@ function EditBlockModal({ block, onClose, onSubmit }: { block: any, onClose: () 
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Reserved For (Gender)
+            </label>
+            <select
+              name="reserved_for"
+              value={formData.reserved_for}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            >
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
           </div>
 
           <div>

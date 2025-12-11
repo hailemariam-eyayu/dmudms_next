@@ -43,6 +43,8 @@ const unifiedDataStore = {
   deleteStudentPlacement: (id: string) => isDemoMode ? dataStore.deleteStudentPlacement(id) : mongoDataStore.deleteStudentPlacement(id),
   unassignAllStudents: () => isDemoMode ? dataStore.unassignAllStudents() : mongoDataStore.unassignAllStudents(),
   autoAssignStudents: () => isDemoMode ? dataStore.autoAssignStudents() : mongoDataStore.autoAssignStudents(),
+  autoAssignSpecificStudent: (studentId: string) => isDemoMode ? dataStore.autoAssignSpecificStudent?.(studentId) || { success: false, error: 'Not implemented in demo mode' } : mongoDataStore.autoAssignSpecificStudent(studentId),
+  manualAssignStudent: (studentId: string, blockId: string, roomId: string) => isDemoMode ? dataStore.manualAssignStudent?.(studentId, blockId, roomId) || { success: false, error: 'Not implemented in demo mode' } : mongoDataStore.manualAssignStudent(studentId, blockId, roomId),
 
   // Requests
   getRequests: () => isDemoMode ? dataStore.getRequests() : mongoDataStore.getRequests(),

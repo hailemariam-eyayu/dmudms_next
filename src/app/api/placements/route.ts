@@ -59,22 +59,47 @@ export async function POST(request: NextRequest) {
 
     // Handle bulk operations
     if (action === 'auto_assign') {
-      const result = await unifiedDataStore.autoAssignStudents();
+      const { student_id } = body;
+      
+      if (student_id) {
+        // Auto-assign specific student
+        const result = await unifiedDataStore.autoAssignSpecificStudent(student_id);
+        return NextResponse.json({
+          success: result.success,
+          data: result,
+          message: result.success ? 'Student assigned successfully' : result.error
+        });
+      } else {
+        // Auto-assign all unassigned students
+        const result = await unifiedDataStore.autoAssignStudents();
+        return NextResponse.json({
+          success: true,
+          data: result,
+          message: `Auto-assignment completed. ${result.assigned} students assigned.`
+        });
+      }
+    }
+
+    // Handle manual assignment
+    if (action === 'manual_assign') {
+      const { student_id, block_id, room_id } = body;
+      
+      if (!student_id || !block_id || !room_id) {
+        return NextResponse.json(
+          { success: false, error: 'student_id, block_id, and room_id are required for manual assignment' },
+          { status: 400 }
+        );
+      }
+
+      const result = await unifiedDataStore.manualAssignStudent(student_id, block_id, room_id);
       return NextResponse.json({
-        success: true,
+        success: result.success,
         data: result,
-        message: `Auto-assignment completed. ${result.assigned} students assigned.`
+        message: result.success ? 'Student assigned successfully' : result.error
       });
     }
 
-    if (action === 'unassign_all') {
-      const count = await unifiedDataStore.unassignAllStudents();
-      return NextResponse.json({
-        success: true,
-        count,
-        message: `${count} students unassigned successfully`
-      });
-    }
+
 
     // Handle individual placement creation
     const { student_id, room, block } = body;
@@ -161,6 +186,23 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Failed to create placement' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/placements - Unassign all students
+export async function DELETE(request: NextRequest) {
+  try {
+    const count = await unifiedDataStore.unassignAllStudents();
+    return NextResponse.json({
+      success: true,
+      count,
+      message: `${count} students unassigned successfully`
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: 'Failed to unassign students' },
       { status: 500 }
     );
   }

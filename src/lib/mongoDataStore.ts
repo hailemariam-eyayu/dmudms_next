@@ -525,32 +525,134 @@ class MongoDataStore {
     return { assigned, errors };
   }
 
+  // Auto-assign specific student
+  async autoAssignSpecificStudent(studentId: string) {
+    await this.init();
+    
+    const student = await Student.findOne({ student_id: studentId, status: 'active' }).lean();
+    if (!student) {
+      return { success: false, error: 'Student not found or not active' };
+    }
+
+    // Check if already assigned
+    const existingPlacement = await StudentPlacement.findOne({ student_id: studentId }).lean();
+    if (existingPlacement) {
+      return { success: false, error: 'Student already has a placement' };
+    }
+
+    return await this.assignStudentToRoom(student);
+  }
+
+  // Manual assignment with validation
+  async manualAssignStudent(studentId: string, blockId: string, roomId: string) {
+    await this.init();
+    
+    try {
+      // Validate student
+      const student = await Student.findOne({ student_id: studentId, status: 'active' }).lean();
+      if (!student) {
+        return { success: false, error: 'Student not found or not active' };
+      }
+
+      // Check if already assigned
+      const existingPlacement = await StudentPlacement.findOne({ student_id: studentId }).lean();
+      if (existingPlacement) {
+        return { success: false, error: 'Student already has a placement' };
+      }
+
+      // Validate block
+      const block = await Block.findOne({ block_id: blockId, status: 'active' }).lean();
+      if (!block) {
+        return { success: false, error: 'Block not found or not active' };
+      }
+
+      // Validate room
+      const room = await Room.findOne({ room_id: roomId, block: blockId }).lean();
+      if (!room) {
+        return { success: false, error: 'Room not found in specified block' };
+      }
+
+      // Check room availability
+      if (room.status !== 'available' || (room.current_occupancy || 0) >= room.capacity) {
+        return { success: false, error: 'Room is not available or at full capacity' };
+      }
+
+      // Validate gender matching
+      if (block.reserved_for !== student.gender) {
+        return { success: false, error: `Block is reserved for ${block.reserved_for} students` };
+      }
+
+      // Validate disability accessibility
+      if (student.disability_status !== 'none' && !room.disability_accessible) {
+        return { success: false, error: 'Student with disability needs an accessible room' };
+      }
+
+      // Create placement
+      await this.createStudentPlacement({
+        student_id: studentId,
+        room: roomId,
+        block: blockId,
+        year: new Date().getFullYear().toString(),
+        status: 'active',
+        assigned_date: new Date()
+      });
+
+      // Update room occupancy
+      const newOccupancy = (room.current_occupancy || 0) + 1;
+      await this.updateRoom(roomId, blockId, {
+        current_occupancy: newOccupancy,
+        status: newOccupancy >= room.capacity ? 'occupied' : 'available'
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Manual assignment error:', error);
+      return { success: false, error: 'Database error during assignment' };
+    }
+  }
+
   private async assignStudentToRoom(student: any) {
     try {
-      // Find suitable blocks
+      // Find suitable blocks based on gender
       const suitableBlocks = await Block.find({
-        reserved_for: { $in: [student.gender, 'mixed'] },
-        status: 'active',
-        $or: [
-          { disable_group: false },
-          { disable_group: true, $expr: { $ne: [student.disability_status, 'none'] } }
-        ]
+        reserved_for: student.gender,
+        status: 'active'
       }).lean();
 
       if (suitableBlocks.length === 0) {
-        return { success: false, error: 'No suitable blocks available' };
+        return { success: false, error: 'No suitable blocks available for this gender' };
       }
 
-      // Find available rooms in suitable blocks
+      // Find available rooms in suitable blocks with enhanced logic
       for (const block of suitableBlocks) {
-        const availableRooms = await Room.find({
+        let roomQuery: any = {
           block: block.block_id,
           status: 'available',
           $expr: { $lt: ['$current_occupancy', '$capacity'] }
-        }).lean();
+        };
+
+        // Enhanced disability logic
+        if (student.disability_status !== 'none') {
+          // Students with disabilities need accessible rooms (ground floor)
+          roomQuery.disability_accessible = true;
+        } else {
+          // Normal students can use any available room
+          // Including non-ground floors in disability blocks
+          // No additional restrictions needed
+        }
+
+        const availableRooms = await Room.find(roomQuery).lean();
 
         if (availableRooms.length > 0) {
-          const room = availableRooms[0];
+          // Prioritize accessible rooms for students with disabilities
+          // For normal students, prefer non-accessible rooms first to save accessible ones
+          let room;
+          if (student.disability_status !== 'none') {
+            room = availableRooms[0]; // Any accessible room
+          } else {
+            // Prefer non-accessible rooms first
+            room = availableRooms.find(r => !r.disability_accessible) || availableRooms[0];
+          }
           
           // Create placement
           await this.createStudentPlacement({
@@ -575,6 +677,7 @@ class MongoDataStore {
 
       return { success: false, error: 'No available rooms found' };
     } catch (error) {
+      console.error('Assignment error:', error);
       return { success: false, error: 'Database error during assignment' };
     }
   }

@@ -19,6 +19,9 @@ export interface Room {
   status: 'available' | 'occupied' | 'maintenance' | 'reserved';
   capacity: number;
   current_occupancy?: number;
+  disability_accessible?: boolean;
+  floor?: number;
+  room_number?: string;
 }
 
 export interface Block {
