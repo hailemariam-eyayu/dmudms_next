@@ -14,18 +14,18 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const block = await mongoDataStore.getBlockById(params.id);
+    const employee = await mongoDataStore.getEmployeeById(params.id);
     
-    if (!block) {
-      return NextResponse.json({ success: false, error: 'Block not found' }, { status: 404 });
+    if (!employee) {
+      return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404 });
     }
 
     return NextResponse.json({
       success: true,
-      data: block
+      data: employee
     });
   } catch (error) {
-    console.error('Error fetching block:', error);
+    console.error('Error fetching employee:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -40,20 +40,20 @@ export async function PUT(
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || !['admin', 'directorate'].includes(session.user.role)) {
+    if (!session || session.user.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const updateData = await request.json();
     
-    const result = await mongoDataStore.updateBlock(params.id, updateData);
+    const result = await mongoDataStore.updateEmployee(params.id, updateData);
     
     return NextResponse.json({
       success: true,
       data: result
     });
   } catch (error) {
-    console.error('Error updating block:', error);
+    console.error('Error updating employee:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -68,18 +68,18 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || !['admin', 'directorate'].includes(session.user.role)) {
+    if (!session || session.user.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    await mongoDataStore.deleteBlock(params.id);
+    await mongoDataStore.deleteEmployee(params.id);
     
     return NextResponse.json({
       success: true,
-      message: 'Block deleted successfully'
+      message: 'Employee deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting block:', error);
+    console.error('Error deleting employee:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

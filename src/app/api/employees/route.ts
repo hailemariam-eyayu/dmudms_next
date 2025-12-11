@@ -11,19 +11,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only admin and directorate can view all students
+    // Only admin and directorate can view all employees
     if (!['admin', 'directorate'].includes(session.user.role)) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    const students = await mongoDataStore.getStudents();
+    const employees = await mongoDataStore.getEmployees();
     
     return NextResponse.json({
       success: true,
-      data: students
+      data: employees
     });
   } catch (error) {
-    console.error('Error fetching students:', error);
+    console.error('Error fetching employees:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -39,12 +39,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const studentData = await request.json();
+    const employeeData = await request.json();
     
     // Validate required fields
-    const requiredFields = ['student_id', 'first_name', 'last_name', 'email'];
+    const requiredFields = ['employee_id', 'first_name', 'last_name', 'email', 'role'];
     for (const field of requiredFields) {
-      if (!studentData[field]) {
+      if (!employeeData[field]) {
         return NextResponse.json(
           { success: false, error: `${field} is required` },
           { status: 400 }
@@ -52,19 +52,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Set default password if not provided
-    if (!studentData.password) {
-      studentData.password = 'default123';
-    }
-
-    const result = await mongoDataStore.createStudent(studentData);
+    const result = await mongoDataStore.createEmployee(employeeData);
     
     return NextResponse.json({
       success: true,
       data: result
     });
   } catch (error) {
-    console.error('Error creating student:', error);
+    console.error('Error creating employee:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

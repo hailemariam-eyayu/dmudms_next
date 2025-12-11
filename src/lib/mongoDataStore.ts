@@ -162,6 +162,11 @@ class MongoDataStore {
     return result.deletedCount > 0;
   }
 
+  async getEmployeeById(employeeId: string) {
+    await this.init();
+    return await Employee.findOne({ employee_id: employeeId }).lean();
+  }
+
   // Rooms CRUD
   async getRooms() {
     await this.init();
@@ -219,6 +224,11 @@ class MongoDataStore {
     await this.init();
     const result = await Block.deleteOne({ block_id: blockId });
     return result.deletedCount > 0;
+  }
+
+  async getBlockById(blockId: string) {
+    await this.init();
+    return await Block.findOne({ block_id: blockId }).lean();
   }
 
   // Student Placements CRUD
@@ -509,4 +519,5 @@ class MongoDataStore {
 // Create singleton instance
 const mongoDataStore = new MongoDataStore();
 
+export { mongoDataStore };
 export default mongoDataStore;

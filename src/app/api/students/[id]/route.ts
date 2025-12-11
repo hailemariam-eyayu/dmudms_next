@@ -1,94 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dataStore from '@/lib/dataStore';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import mongoDataStore from '@/lib/mongoDataStore';
 
-// GET /api/students/[id] - Get a specific student
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
   try {
-    const student = dataStore.getStudent(id);
+    const session = await getServerSession(authOptions);
+    
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const student = await mongoDataStore.getStudent(params.id);
     
     if (!student) {
-      return NextResponse.json(
-        { success: false, error: 'Student not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Student not found' }, { status: 404 });
     }
-
-    // Get student placement if exists
-    const placement = dataStore.getStudentPlacement(id);
 
     return NextResponse.json({
       success: true,
-      data: {
-        ...student,
-        placement
-      }
+      data: student
     });
   } catch (error) {
+    console.error('Error fetching student:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch student' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
-// PUT /api/students/[id] - Update a specific student
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
   try {
-    const body = await request.json();
+    const session = await getServerSession(authOptions);
     
-    const updatedStudent = dataStore.updateStudent(id, body);
-    
-    if (!updatedStudent) {
-      return NextResponse.json(
-        { success: false, error: 'Student not found' },
-        { status: 404 }
-      );
+    if (!session || session.user.role !== 'admin') {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
+    const updateData = await request.json();
+    
+    const result = await mongoDataStore.updateStudent(params.id, updateData);
+    
     return NextResponse.json({
       success: true,
-      data: updatedStudent,
-      message: 'Student updated successfully'
+      data: result
     });
   } catch (error) {
+    console.error('Error updating student:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to update student' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/students/[id] - Delete a specific student
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
   try {
-    const deleted = dataStore.deleteStudent(id);
+    const session = await getServerSession(authOptions);
     
-    if (!deleted) {
-      return NextResponse.json(
-        { success: false, error: 'Student not found' },
-        { status: 404 }
-      );
+    if (!session || session.user.role !== 'admin') {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
+    await mongoDataStore.deleteStudent(params.id);
+    
     return NextResponse.json({
       success: true,
       message: 'Student deleted successfully'
     });
   } catch (error) {
+    console.error('Error deleting student:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to delete student' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
