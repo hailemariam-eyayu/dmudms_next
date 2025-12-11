@@ -14,6 +14,143 @@ interface Placement {
   assigned_date: string;
 }
 
+interface Student {
+  _id: string;
+  student_id: string;
+  first_name: string;
+  second_name?: string;
+  last_name: string;
+  email: string;
+  gender: 'male' | 'female';
+  batch: string;
+  status: 'active' | 'inactive';
+}
+
+// Component to show unassigned students
+function UnassignedStudents({ onRefresh }: { onRefresh: () => void }) {
+  const [unassignedStudents, setUnassignedStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUnassignedStudents();
+  }, []);
+
+  const fetchUnassignedStudents = async () => {
+    try {
+      setLoading(true);
+      // Get all students
+      const studentsResponse = await fetch('/api/students');
+      const studentsData = await studentsResponse.json();
+      
+      // Get all placements
+      const placementsResponse = await fetch('/api/placements');
+      const placementsData = await placementsResponse.json();
+      
+      if (studentsData.success && placementsData.success) {
+        const allStudents = studentsData.data;
+        const assignedStudentIds = placementsData.data.map((p: Placement) => p.student_id);
+        
+        const unassigned = allStudents.filter((student: Student) => 
+          student.status === 'active' && !assignedStudentIds.includes(student.student_id)
+        );
+        
+        setUnassignedStudents(unassigned);
+      }
+    } catch (error) {
+      console.error('Error fetching unassigned students:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAssignStudent = async (studentId: string) => {
+    try {
+      // For now, just trigger auto-assignment for this specific student
+      // In a full implementation, you'd show a room selection dialog
+      const response = await fetch('/api/placements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'auto_assign' }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        alert('Student assigned successfully!');
+        fetchUnassignedStudents();
+        onRefresh();
+      } else {
+        alert(data.error || 'Failed to assign student');
+      }
+    } catch (error) {
+      alert('Failed to assign student');
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-4">Loading unassigned students...</div>;
+  }
+
+  if (unassignedStudents.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-green-600 text-lg font-medium">✅ All students are assigned!</div>
+        <p className="text-gray-600 mt-2">No students need room assignments at this time.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="mb-4">
+        <span className="text-orange-600 font-medium">
+          {unassignedStudents.length} student(s) need room assignments
+        </span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {unassignedStudents.map((student, index) => (
+              <tr key={student._id || `unassigned-${index}`} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {student.student_id}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {`${student.first_name} ${student.second_name || ''} ${student.last_name}`.trim()}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {student.gender}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {student.batch}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <button
+                    onClick={() => handleAssignStudent(student.student_id)}
+                    className="text-blue-600 hover:text-blue-900"
+                  >
+                    Auto Assign
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export default function PlacementsPage() {
   const { data: session, status } = useSession();
   const [placements, setPlacements] = useState<Placement[]>([]);
@@ -142,19 +279,28 @@ export default function PlacementsPage() {
           <p className="mt-2 text-gray-600">Manage student room assignments and placements</p>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-4">
-          <button
-            onClick={handleAutoAssign}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-          >
-            Auto Assign Students
-          </button>
-          <button
-            onClick={handleUnassignAll}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-          >
-            Unassign All Students
-          </button>
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-wrap gap-4">
+            <button
+              onClick={handleAutoAssign}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+            >
+              Auto Assign Students
+            </button>
+            <button
+              onClick={handleUnassignAll}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            >
+              Unassign All Students
+            </button>
+            <button
+              onClick={fetchPlacements}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            >
+              Refresh Data
+            </button>
+          </div>
+          
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -170,9 +316,20 @@ export default function PlacementsPage() {
           </div>
         </div>
 
+        {/* Unassigned Students Section */}
+        <div className="bg-white shadow rounded-lg mb-6">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">Unassigned Students</h2>
+            <p className="text-sm text-gray-600">Students who need room assignments</p>
+          </div>
+          <div className="p-6">
+            <UnassignedStudents onRefresh={fetchPlacements} />
+          </div>
+        </div>
+
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">All Placements</h2>
+            <h2 className="text-lg font-medium text-gray-900">All Placements ({placements.length})</h2>
           </div>
           
           <div className="overflow-x-auto">

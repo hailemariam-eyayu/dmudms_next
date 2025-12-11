@@ -8,6 +8,7 @@ import StudentPlacement from '@/models/mongoose/StudentPlacement';
 import Request from '@/models/mongoose/Request';
 import Emergency from '@/models/mongoose/Emergency';
 import Notification from '@/models/mongoose/Notification';
+import Material from '@/models/mongoose/Material';
 import { hashPassword } from './auth';
 import { 
   sampleStudents, 
@@ -469,6 +470,72 @@ class MongoDataStore {
     } catch (error) {
       return { success: false, error: 'Database error during assignment' };
     }
+  }
+
+  // Materials CRUD
+  async getMaterials() {
+    await this.init();
+    return await Material.find().lean();
+  }
+
+  async getMaterialsByBlock(block: string) {
+    await this.init();
+    return await Material.find({ block }).lean();
+  }
+
+  async getMaterial(id: string) {
+    await this.init();
+    return await Material.findById(id).lean();
+  }
+
+  async createMaterial(materialData: any) {
+    await this.init();
+    const material = new Material(materialData);
+    return await material.save();
+  }
+
+  async updateMaterial(id: string, updates: any) {
+    await this.init();
+    return await Material.findByIdAndUpdate(id, updates, { new: true }).lean();
+  }
+
+  async deleteMaterial(id: string) {
+    await this.init();
+    const result = await Material.findByIdAndDelete(id);
+    return !!result;
+  }
+
+  // Materials CRUD
+  async getMaterials() {
+    await this.init();
+    return await Material.find().lean();
+  }
+
+  async getMaterialsByBlock(block: string) {
+    await this.init();
+    return await Material.find({ block }).lean();
+  }
+
+  async getMaterial(id: string) {
+    await this.init();
+    return await Material.findById(id).lean();
+  }
+
+  async createMaterial(materialData: any) {
+    await this.init();
+    const material = new Material(materialData);
+    return await material.save();
+  }
+
+  async updateMaterial(id: string, updates: any) {
+    await this.init();
+    return await Material.findByIdAndUpdate(id, updates, { new: true }).lean();
+  }
+
+  async deleteMaterial(id: string) {
+    await this.init();
+    const result = await Material.findByIdAndDelete(id);
+    return !!result;
   }
 }
 
