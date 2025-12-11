@@ -70,8 +70,19 @@ export async function POST(request: NextRequest) {
     };
     
     return NextResponse.json(response);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating employee:', error);
+    
+    // Handle MongoDB duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      const value = error.keyValue[field];
+      return NextResponse.json(
+        { success: false, error: `${field} '${value}' already exists. Please use a different ${field}.` },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

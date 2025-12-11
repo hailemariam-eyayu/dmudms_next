@@ -35,7 +35,8 @@ export default function EmployeeManagement() {
     role: 'proctor',
     status: 'active' as 'active' | 'inactive',
     phone: '',
-    department: ''
+    department: '',
+    password: ''
   });
 
   useEffect(() => {
@@ -63,6 +64,8 @@ export default function EmployeeManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMessage(null);
+    
     try {
       const url = editingEmployee ? `/api/employees/${editingEmployee.employee_id}` : '/api/employees';
       const method = editingEmployee ? 'PUT' : 'POST';
@@ -74,15 +77,30 @@ export default function EmployeeManagement() {
       });
       
       const data = await response.json();
+      
       if (data.success) {
+        if (data.generatedPassword) {
+          setMessage({ 
+            type: 'success', 
+            text: `Employee ${editingEmployee ? 'updated' : 'created'} successfully! Generated password: ${data.generatedPassword}` 
+          });
+        } else {
+          setMessage({ 
+            type: 'success', 
+            text: `Employee ${editingEmployee ? 'updated' : 'created'} successfully!` 
+          });
+        }
+        
         fetchEmployees();
+        setShowCreateForm(false);
+        setEditingEmployee(null);
         resetForm();
-        alert(editingEmployee ? 'Employee updated successfully!' : 'Employee created successfully!');
       } else {
-        alert(data.error || 'Operation failed');
+        setMessage({ type: 'error', text: data.error || 'Operation failed' });
       }
     } catch (error) {
-      alert('Operation failed');
+      console.error('Error saving employee:', error);
+      setMessage({ type: 'error', text: 'Operation failed' });
     }
   };
 
@@ -94,7 +112,10 @@ export default function EmployeeManagement() {
       last_name: employee.last_name,
       email: employee.email,
       role: employee.role,
-      status: employee.status
+      status: employee.status,
+      phone: employee.phone || '',
+      department: employee.department || '',
+      password: '' // Don't populate password for editing
     });
     setShowCreateForm(true);
   };
@@ -146,7 +167,10 @@ export default function EmployeeManagement() {
       last_name: '',
       email: '',
       role: 'proctor',
-      status: 'active'
+      status: 'active',
+      phone: '',
+      department: '',
+      password: ''
     });
     setEditingEmployee(null);
     setShowCreateForm(false);
@@ -307,6 +331,7 @@ export default function EmployeeManagement() {
                   <option value="directorate">Directorate</option>
                   <option value="coordinator">Coordinator</option>
                   <option value="proctor">Proctor</option>
+                  <option value="proctor_manager">Proctor Manager</option>
                   <option value="registrar">Registrar</option>
                   <option value="maintainer">Maintainer</option>
                 </select>
@@ -322,6 +347,41 @@ export default function EmployeeManagement() {
                   <option value="inactive">Inactive</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., +1234567890"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <input
+                  type="text"
+                  value={formData.department}
+                  onChange={(e) => setFormData({...formData, department: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., Student Affairs"
+                />
+              </div>
+              {!editingEmployee && (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Password (Optional)</label>
+                  <input
+                    type="password"
+                    value={formData.password || ''}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    placeholder="Leave empty to auto-generate using last name + 1234abcd#"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    If left empty, password will be: last_name + "1234abcd#"
+                  </p>
+                </div>
+              )}
               <div className="md:col-span-2 flex gap-2">
                 <button
                   type="submit"
