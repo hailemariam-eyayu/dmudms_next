@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dataStore from '@/lib/dataStore';
+import unifiedDataStore from '@/lib/unifiedDataStore';
 
 // GET /api/placements - Get all placements with optional search
 export async function GET(request: NextRequest) {
@@ -9,11 +9,11 @@ export async function GET(request: NextRequest) {
     const block = searchParams.get('block');
     const status = searchParams.get('status');
 
-    let placements = dataStore.getStudentPlacements();
+    let placements = await unifiedDataStore.getStudentPlacements();
 
     // Apply search filter
     if (search) {
-      placements = dataStore.searchPlacements(search);
+      placements = await unifiedDataStore.searchPlacements(search);
     }
 
     // Apply block filter
@@ -27,15 +27,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Enrich with student data
-    const enrichedPlacements = placements.map(placement => {
-      const student = dataStore.getStudent(placement.student_id);
-      const room = dataStore.getRoom(placement.room, placement.block);
+    const enrichedPlacements = await Promise.all(placements.map(async (placement) => {
+      const student = await unifiedDataStore.getStudent(placement.student_id);
+      const room = await unifiedDataStore.getRoom(placement.room, placement.block);
       return {
         ...placement,
-        student,
-        room
+        student_name: student ? `${student.first_name} ${student.last_name}` : 'Unknown',
+        student_email: student?.email || '',
+        room_capacity: room?.capacity || 0,
+        room_status: room?.status || 'unknown'
       };
-    });
+    }));
 
     return NextResponse.json({
       success: true,
@@ -57,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // Handle bulk operations
     if (action === 'auto_assign') {
-      const result = dataStore.autoAssignStudents();
+      const result = await unifiedDataStore.autoAssignStudents();
       return NextResponse.json({
         success: true,
         data: result,
@@ -66,9 +68,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'unassign_all') {
-      const count = dataStore.unassignAllStudents();
+      const count = await unifiedDataStore.unassignAllStudents();
       return NextResponse.json({
         success: true,
+        count,
         message: `${count} students unassigned successfully`
       });
     }
@@ -84,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if student exists and is available
-    const student = dataStore.getStudent(student_id);
+    const student = await unifiedDataStore.getStudent(student_id);
     if (!student) {
       return NextResponse.json(
         { success: false, error: 'Student not found' },
@@ -100,7 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if student already has a placement
-    const existingPlacement = dataStore.getStudentPlacement(student_id);
+    const existingPlacement = await unifiedDataStore.getStudentPlacement(student_id);
     if (existingPlacement) {
       return NextResponse.json(
         { success: false, error: 'Student already has a placement' },
@@ -109,7 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if room exists and is available
-    const roomData = dataStore.getRoom(room, block);
+    const roomData = await unifiedDataStore.getRoom(room, block);
     if (!roomData) {
       return NextResponse.json(
         { success: false, error: 'Room not found' },
@@ -134,7 +137,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create placement
-    const placement = dataStore.createStudentPlacement({
+    const placement = await unifiedDataStore.createStudentPlacement({
       student_id,
       room,
       block,
@@ -145,7 +148,7 @@ export async function POST(request: NextRequest) {
 
     // Update room occupancy
     const newOccupancy = currentOccupancy + 1;
-    dataStore.updateRoom(room, block, {
+    await unifiedDataStore.updateRoom(room, block, {
       current_occupancy: newOccupancy,
       status: newOccupancy >= roomData.capacity ? 'occupied' : 'available'
     });
