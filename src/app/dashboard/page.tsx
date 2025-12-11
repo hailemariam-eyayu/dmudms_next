@@ -21,7 +21,8 @@ export default function DashboardRedirect() {
       directorate: '/directorate',
       proctor: '/proctor',
       student: '/student',
-      coordinator: '/dashboard/coordinator',
+      coordinator: '/coordinator',
+      proctormanager: '/proctormanager',
       registrar: '/dashboard/registrar',
       maintainer: '/dashboard/maintainer'
     };

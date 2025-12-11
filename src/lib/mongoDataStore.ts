@@ -184,6 +184,12 @@ class MongoDataStore {
     return await Room.findOne({ room_id: roomId, block }).lean();
   }
 
+  async createRoom(roomData: any) {
+    await this.init();
+    const room = new Room(roomData);
+    return await room.save();
+  }
+
   async updateRoom(roomId: string, block: string, updates: any) {
     await this.init();
     return await Room.findOneAndUpdate(
@@ -213,8 +219,51 @@ class MongoDataStore {
 
   async createBlock(blockData: any) {
     await this.init();
-    const block = new Block(blockData);
-    return await block.save();
+    
+    // Calculate total capacity
+    const totalCapacity = blockData.floors * blockData.rooms_per_floor * blockData.room_capacity;
+    
+    const block = new Block({
+      ...blockData,
+      capacity: totalCapacity,
+      occupied: 0
+    });
+    
+    const savedBlock = await block.save();
+    
+    // Generate rooms automatically
+    await this.generateRoomsForBlock(savedBlock);
+    
+    return savedBlock;
+  }
+
+  private async generateRoomsForBlock(block: any) {
+    const rooms = [];
+    
+    for (let floor = 0; floor < block.floors; floor++) {
+      for (let roomNum = 1; roomNum <= block.rooms_per_floor; roomNum++) {
+        const roomNumber = `${roomNum.toString().padStart(2, '0')}`;
+        const roomId = `${block.block_id}${floor}${roomNumber}`;
+        
+        // Ground floor (floor 0) rooms are disability accessible
+        const isDisabilityAccessible = floor === 0;
+        
+        rooms.push({
+          room_id: roomId,
+          block: block.block_id,
+          floor: floor,
+          room_number: roomNumber,
+          status: 'available',
+          capacity: block.room_capacity,
+          current_occupancy: 0,
+          disability_accessible: isDisabilityAccessible
+        });
+      }
+    }
+    
+    if (rooms.length > 0) {
+      await Room.insertMany(rooms);
+    }
   }
 
   async updateBlock(blockId: string, updates: any) {

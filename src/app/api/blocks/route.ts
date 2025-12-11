@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const blockData = await request.json();
     
     // Validate required fields
-    const requiredFields = ['block_id', 'name', 'reserved_for', 'total_rooms'];
+    const requiredFields = ['block_id', 'name', 'gender', 'floors', 'rooms_per_floor'];
     for (const field of requiredFields) {
       if (!blockData[field]) {
         return NextResponse.json(
@@ -46,6 +46,11 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+
+    // Set defaults
+    blockData.reserved_for = blockData.gender;
+    blockData.room_capacity = blockData.room_capacity || 6;
+    blockData.disable_group = blockData.disable_group || false;
 
     const result = await mongoDataStore.createBlock(blockData);
     

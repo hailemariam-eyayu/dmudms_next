@@ -52,11 +52,11 @@ export default function RoleBasedNavigation() {
         return [
           { name: 'Dashboard', href: '/coordinator', icon: Home },
           { name: 'Manage Proctors', href: '/coordinator/proctors', icon: UserCheck },
-          { name: 'Block Assignments', href: '/directorate/proctors', icon: Building },
-          { name: 'All Students', href: '/admin/students', icon: Users },
-          { name: 'Materials', href: '/proctor/materials', icon: Package },
-          { name: 'Requests', href: '/proctor/requests', icon: ClipboardList },
-          { name: 'Reports', href: '/coordinator/reports', icon: BarChart3 }
+          { name: 'View Blocks', href: '/coordinator/blocks', icon: Building },
+          { name: 'View Assignments', href: '/coordinator/assignments', icon: ClipboardList },
+          { name: 'Assign Proctors', href: '/coordinator/assign-proctors', icon: Settings },
+          { name: 'Reports', href: '/coordinator/reports', icon: BarChart3 },
+          { name: 'All Students', href: '/admin/students', icon: Users }
         ];
 
       case 'proctor':

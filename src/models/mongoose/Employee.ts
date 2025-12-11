@@ -5,7 +5,10 @@ export interface IEmployee extends Document {
   first_name: string;
   last_name: string;
   email: string;
-  role: 'admin' | 'directorate' | 'coordinator' | 'proctor' | 'registrar' | 'maintainer';
+  gender: 'male' | 'female';
+  phone?: string;
+  department?: string;
+  role: 'admin' | 'directorate' | 'coordinator' | 'proctor' | 'proctor_manager' | 'registrar' | 'maintainer';
   status: 'active' | 'inactive';
   password?: string;
   created_at: Date;
@@ -35,9 +38,22 @@ const EmployeeSchema: Schema = new Schema({
     lowercase: true,
     trim: true
   },
+  gender: {
+    type: String,
+    enum: ['male', 'female'],
+    required: true
+  },
+  phone: {
+    type: String,
+    trim: true
+  },
+  department: {
+    type: String,
+    trim: true
+  },
   role: {
     type: String,
-    enum: ['admin', 'directorate', 'coordinator', 'proctor', 'registrar', 'maintainer'],
+    enum: ['admin', 'directorate', 'coordinator', 'proctor', 'proctor_manager', 'registrar', 'maintainer'],
     required: true
   },
   status: {
@@ -56,5 +72,7 @@ const EmployeeSchema: Schema = new Schema({
 // Additional indexes (unique indexes are automatically created)
 EmployeeSchema.index({ role: 1 });
 EmployeeSchema.index({ status: 1 });
+EmployeeSchema.index({ gender: 1 });
+EmployeeSchema.index({ role: 1, gender: 1 });
 
 export default mongoose.models.Employee || mongoose.model<IEmployee>('Employee', EmployeeSchema);

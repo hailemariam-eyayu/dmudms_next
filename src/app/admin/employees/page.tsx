@@ -11,6 +11,7 @@ interface Employee {
   first_name: string;
   last_name: string;
   email: string;
+  gender: 'male' | 'female';
   role: string;
   status: 'active' | 'inactive';
   phone?: string;
@@ -32,6 +33,7 @@ export default function EmployeeManagement() {
     first_name: '',
     last_name: '',
     email: '',
+    gender: 'male' as 'male' | 'female',
     role: 'proctor',
     status: 'active' as 'active' | 'inactive',
     phone: '',
@@ -111,6 +113,7 @@ export default function EmployeeManagement() {
       first_name: employee.first_name,
       last_name: employee.last_name,
       email: employee.email,
+      gender: (employee as any).gender || 'male',
       role: employee.role,
       status: employee.status,
       phone: employee.phone || '',
@@ -166,6 +169,7 @@ export default function EmployeeManagement() {
       first_name: '',
       last_name: '',
       email: '',
+      gender: 'male',
       role: 'proctor',
       status: 'active',
       phone: '',
@@ -321,6 +325,18 @@ export default function EmployeeManagement() {
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                <select
+                  value={formData.gender}
+                  onChange={(e) => setFormData({...formData, gender: e.target.value as 'male' | 'female'})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                 <select
                   value={formData.role}
@@ -422,6 +438,9 @@ export default function EmployeeManagement() {
                     Email
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Gender
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Role
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -443,6 +462,13 @@ export default function EmployeeManagement() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {employee.email}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        (employee as any).gender === 'male' ? 'bg-blue-100 text-blue-800' : 'bg-pink-100 text-pink-800'
+                      }`}>
+                        {(employee as any).gender || 'Not Set'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${

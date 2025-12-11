@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     const employeeData = await request.json();
     
     // Validate required fields
-    const requiredFields = ['employee_id', 'first_name', 'last_name', 'email', 'role'];
+    const requiredFields = ['employee_id', 'first_name', 'last_name', 'email', 'gender', 'role'];
     for (const field of requiredFields) {
       if (!employeeData[field]) {
         return NextResponse.json(

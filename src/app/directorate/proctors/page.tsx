@@ -48,8 +48,10 @@ export default function ProctorAssignmentPage() {
       }
 
       if (employeesData.success) {
-        // Filter only proctors
-        const proctorList = employeesData.data.filter((emp: any) => emp.role === 'proctor');
+        // Filter only proctors and proctor managers
+        const proctorList = employeesData.data.filter((emp: any) => 
+          emp.role === 'proctor' || emp.role === 'proctor_manager'
+        ).filter((emp: any) => emp.status === 'active');
         setProctors(proctorList);
       }
     } catch (error) {
@@ -77,7 +79,7 @@ export default function ProctorAssignmentPage() {
         proctorId: proctorId || null
       }));
 
-      const response = await fetch('/api/directorate/proctor-assignments', {
+      const response = await fetch('/api/blocks/assign-proctors', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -223,8 +225,10 @@ export default function ProctorAssignmentPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div>
-                          <div>Gender: {block.reserved_for}</div>
-                          <div>Rooms: {block.total_rooms}</div>
+                          <div>Gender: <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${
+                            block.gender === 'male' ? 'bg-blue-100 text-blue-800' : 'bg-pink-100 text-pink-800'
+                          }`}>{block.gender}</span></div>
+                          <div>Capacity: {block.capacity}</div>
                           <div>Status: {block.status}</div>
                         </div>
                       </td>
@@ -247,11 +251,16 @@ export default function ProctorAssignmentPage() {
                           className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
                         >
                           <option value="">Select Proctor</option>
-                          {proctors.map((proctor) => (
+                          {proctors
+                            .filter(proctor => proctor.gender === block.gender)
+                            .map((proctor) => (
                             <option key={proctor.employee_id} value={proctor.employee_id}>
-                              {proctor.first_name} {proctor.last_name} ({proctor.employee_id})
+                              {proctor.first_name} {proctor.last_name} ({proctor.employee_id}) - {proctor.gender}
                             </option>
                           ))}
+                          {proctors.filter(proctor => proctor.gender === block.gender).length === 0 && (
+                            <option disabled>No {block.gender} proctors available</option>
+                          )}
                         </select>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
