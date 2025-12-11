@@ -23,10 +23,13 @@ export default function ProfilePage() {
     try {
       // Fetch additional user details based on role
       let endpoint = '';
-      if (session?.user.role === 'student') {
+      if (session?.user?.role === 'student') {
         endpoint = `/api/students/${session.user.id}`;
-      } else {
+      } else if (session?.user?.id) {
         endpoint = `/api/employees/${session.user.id}`;
+      } else {
+        setLoading(false);
+        return;
       }
 
       const response = await fetch(endpoint);
