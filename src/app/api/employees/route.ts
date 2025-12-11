@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import mongoDataStore from '@/lib/mongoDataStore';
+import { emailService } from '@/lib/emailService';
 
 export async function GET(request: NextRequest) {
   try {
@@ -62,11 +63,28 @@ export async function POST(request: NextRequest) {
 
     const result = await mongoDataStore.createEmployee(employeeData);
     
+    // Send welcome email with credentials
+    if (generatedPassword && employeeData.email) {
+      try {
+        await emailService.sendWelcomeEmail({
+          name: `${employeeData.first_name} ${employeeData.last_name}`,
+          userId: employeeData.employee_id,
+          password: generatedPassword,
+          loginUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`,
+          userType: 'employee'
+        });
+      } catch (error) {
+        console.error('Failed to send welcome email:', error);
+        // Don't fail the request if email fails
+      }
+    }
+    
     // Return the result with the generated password (for admin to share with employee)
     const response = {
       success: true,
       data: result,
-      ...(generatedPassword && { generatedPassword })
+      ...(generatedPassword && { generatedPassword }),
+      emailSent: !!generatedPassword && !!employeeData.email
     };
     
     return NextResponse.json(response);

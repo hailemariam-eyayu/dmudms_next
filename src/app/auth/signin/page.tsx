@@ -145,9 +145,11 @@ export default function SignIn() {
                 <div><strong>Admin:</strong> EMP001 / default123</div>
                 <div><strong>Directorate:</strong> EMP002 / default123</div>
                 <div><strong>Coordinator:</strong> EMP003 / default123</div>
-                <div><strong>Coordinator 2:</strong> EMP0010 / default123</div>
-                <div><strong>Proctor:</strong> EMP004 / default123</div>
+                <div><strong>Proctor (Block A):</strong> EMP004 / default123</div>
                 <div><strong>Registrar:</strong> EMP005 / default123</div>
+                <div><strong>Proctor (Block B):</strong> EMP006 / default123</div>
+                <div><strong>Proctor (Block C):</strong> EMP007 / default123</div>
+                <div><strong>Coordinator 2:</strong> EMP0010 / default123</div>
                 <div><strong>Student:</strong> DMU001 / default123</div>
               </div>
             </div>

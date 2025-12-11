@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import mongoDataStore from '@/lib/mongoDataStore';
 import { hashPassword } from '@/lib/auth';
+import { emailService } from '@/lib/emailService';
 
 export async function POST(
   request: NextRequest,
@@ -29,10 +30,27 @@ export async function POST(
     const hashedPassword = hashPassword(newPassword);
     await mongoDataStore.updateEmployee(id, { password: hashedPassword });
     
+    // Send password reset email
+    if (employee.email) {
+      try {
+        await emailService.sendPasswordResetEmail({
+          name: `${employee.first_name} ${employee.last_name}`,
+          userId: employee.employee_id,
+          password: newPassword,
+          loginUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`,
+          userType: 'employee'
+        });
+      } catch (error) {
+        console.error('Failed to send password reset email:', error);
+        // Don't fail the request if email fails
+      }
+    }
+    
     return NextResponse.json({
       success: true,
       message: 'Password reset successfully',
-      newPassword: newPassword
+      newPassword: newPassword,
+      emailSent: !!employee.email
     });
   } catch (error) {
     console.error('Error resetting password:', error);
