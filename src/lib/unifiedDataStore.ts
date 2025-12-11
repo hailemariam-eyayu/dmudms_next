@@ -68,6 +68,14 @@ const unifiedDataStore = {
 
   // Statistics
   getStatistics: () => isDemoMode ? dataStore.getStatistics() : mongoDataStore.getStatistics(),
+
+  // Materials (placeholder methods - will be implemented when needed)
+  getMaterials: () => isDemoMode ? [] : [],
+  getMaterialsByBlock: (block: string) => isDemoMode ? [] : [],
+  getMaterial: (id: string) => isDemoMode ? null : null,
+  createMaterial: (data: any) => isDemoMode ? null : null,
+  updateMaterial: (id: string, updates: any) => isDemoMode ? null : null,
+  deleteMaterial: (id: string) => isDemoMode ? false : false,
 };
 
 export default unifiedDataStore;

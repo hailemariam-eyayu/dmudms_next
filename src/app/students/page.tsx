@@ -44,7 +44,10 @@ export default function Students() {
               </p>
             </div>
             <div className="mt-4 sm:mt-0">
-              <Button className="flex items-center">
+              <Button 
+                className="flex items-center"
+                onClick={() => window.location.href = '/students/create'}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Student
               </Button>

@@ -122,15 +122,27 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.identifier || !credentials?.password) {
+          console.log('Missing credentials');
           return null;
         }
 
-        const user = await authenticateUser(
-          credentials.identifier,
-          credentials.password
-        );
+        try {
+          const user = await authenticateUser(
+            credentials.identifier,
+            credentials.password
+          );
 
-        return user;
+          if (user) {
+            console.log('Authentication successful for:', credentials.identifier);
+            return user;
+          } else {
+            console.log('Authentication failed for:', credentials.identifier);
+            return null;
+          }
+        } catch (error) {
+          console.error('Authentication error:', error);
+          return null;
+        }
       }
     })
   ],
@@ -159,7 +171,8 @@ export const authOptions: NextAuthOptions = {
     signIn: '/auth/signin',
     error: '/auth/error'
   },
-  secret: process.env.NEXTAUTH_SECRET || 'your-secret-key-change-in-production'
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development'
 };
 
 // Middleware helper for API routes
