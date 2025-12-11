@@ -15,7 +15,15 @@ export async function GET(
     }
 
     const { id } = await params;
-    const student = await mongoDataStore.getStudent(id);
+    
+    // The id parameter could be either MongoDB _id or student_id
+    // First try to find by student_id, then by MongoDB _id
+    let student = await mongoDataStore.getStudent(id);
+    
+    if (!student) {
+      // Try to find by MongoDB _id
+      student = await mongoDataStore.getStudentById(id);
+    }
     
     if (!student) {
       return NextResponse.json({ success: false, error: 'Student not found' }, { status: 404 });
@@ -48,7 +56,19 @@ export async function PUT(
     const updateData = await request.json();
     const { id } = await params;
     
-    const result = await mongoDataStore.updateStudent(id, updateData);
+    // The id parameter could be either MongoDB _id or student_id
+    // First try to find by student_id, then by MongoDB _id
+    let result;
+    try {
+      result = await mongoDataStore.updateStudent(id, updateData);
+    } catch (error) {
+      // If that fails, try updating by MongoDB _id
+      result = await mongoDataStore.updateStudentById(id, updateData);
+    }
+    
+    if (!result) {
+      return NextResponse.json({ success: false, error: 'Student not found' }, { status: 404 });
+    }
     
     return NextResponse.json({
       success: true,
@@ -75,7 +95,20 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    await mongoDataStore.deleteStudent(id);
+    
+    // The id parameter could be either MongoDB _id or student_id
+    // First try to delete by student_id, then by MongoDB _id
+    let result;
+    try {
+      result = await mongoDataStore.deleteStudent(id);
+    } catch (error) {
+      // If that fails, try deleting by MongoDB _id
+      result = await mongoDataStore.deleteStudentById(id);
+    }
+    
+    if (!result) {
+      return NextResponse.json({ success: false, error: 'Student not found' }, { status: 404 });
+    }
     
     return NextResponse.json({
       success: true,

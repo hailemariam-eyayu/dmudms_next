@@ -131,6 +131,11 @@ class MongoDataStore {
     return await Student.findOne({ student_id: studentId }).select('+password').lean();
   }
 
+  async getStudentById(mongoId: string) {
+    await this.init();
+    return await Student.findById(mongoId).select('+password').lean();
+  }
+
   async createStudent(studentData: any) {
     await this.init();
     const student = new Student(studentData);
@@ -146,12 +151,32 @@ class MongoDataStore {
     ).lean();
   }
 
+  async updateStudentById(mongoId: string, updates: any) {
+    await this.init();
+    return await Student.findByIdAndUpdate(
+      mongoId,
+      updates,
+      { new: true }
+    ).lean();
+  }
+
   async deleteStudent(studentId: string) {
     await this.init();
     // Also remove their placement
     await StudentPlacement.deleteOne({ student_id: studentId });
     const result = await Student.deleteOne({ student_id: studentId });
     return result.deletedCount > 0;
+  }
+
+  async deleteStudentById(mongoId: string) {
+    await this.init();
+    // First get the student to find their student_id for placement removal
+    const student = await Student.findById(mongoId);
+    if (student) {
+      await StudentPlacement.deleteOne({ student_id: student.student_id });
+    }
+    const result = await Student.findByIdAndDelete(mongoId);
+    return !!result;
   }
 
   async activateAllStudents() {
