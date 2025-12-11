@@ -72,6 +72,7 @@ export default function RoleBasedNavigation() {
         return [
           { name: 'Dashboard', href: '/student', icon: Home },
           { name: 'My Room', href: '/student/placement', icon: Building },
+          { name: 'Emergency Contact', href: '/student/emergency-contact', icon: Users },
           { name: 'Requests', href: '/student/requests', icon: ClipboardList },
           { name: 'Materials', href: '/student/materials', icon: Package },
           { name: 'Emergency', href: '/student/emergency', icon: AlertTriangle }

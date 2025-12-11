@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import { Users, Edit, Trash2, Plus, Search, UserCheck, UserX, CheckCircle, AlertCircle, Key } from 'lucide-react';
+import { Users, Edit, Trash2, Plus, Search, UserCheck, UserX, CheckCircle, AlertCircle, Key, Upload, Download, FileText } from 'lucide-react';
 
 interface Student {
   _id: string;
@@ -27,6 +27,9 @@ export default function AdminStudentManagement() {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [resetPasswordResult, setResetPasswordResult] = useState<{ studentId: string, newPassword: string } | null>(null);
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResults, setUploadResults] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     student_id: '',
@@ -175,6 +178,71 @@ export default function AdminStudentManagement() {
     });
   };
 
+  const handleCSVUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const fileInput = form.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = fileInput.files?.[0];
+
+    if (!file) {
+      setMessage({ type: 'error', text: 'Please select a CSV file' });
+      return;
+    }
+
+    setUploading(true);
+    setMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/students/upload-csv', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setUploadResults(data.data);
+        setMessage({ type: 'success', text: data.message });
+        fetchStudents(); // Refresh the student list
+        setShowUploadForm(false);
+      } else {
+        setMessage({ type: 'error', text: data.error });
+      }
+    } catch (error) {
+      console.error('Error uploading CSV:', error);
+      setMessage({ type: 'error', text: 'Failed to upload CSV file' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const response = await fetch('/api/export/students?format=csv');
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `students_export_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        setMessage({ type: 'success', text: 'Students exported successfully!' });
+      } else {
+        setMessage({ type: 'error', text: 'Failed to export students' });
+      }
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      setMessage({ type: 'error', text: 'Failed to export students' });
+    }
+  };
+
   const filteredStudents = students.filter(student =>
     student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -207,17 +275,33 @@ export default function AdminStudentManagement() {
                 <p className="text-gray-600">Manage student records and information</p>
               </div>
             </div>
-            <button
-              onClick={() => {
-                resetForm();
-                setEditingStudent(null);
-                setShowCreateForm(true);
-              }}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Student
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleExportCSV}
+                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </button>
+              <button
+                onClick={() => setShowUploadForm(true)}
+                className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload CSV
+              </button>
+              <button
+                onClick={() => {
+                  resetForm();
+                  setEditingStudent(null);
+                  setShowCreateForm(true);
+                }}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Student
+              </button>
+            </div>
           </div>
         </div>
 
@@ -259,6 +343,95 @@ export default function AdminStudentManagement() {
             <p className="text-sm text-blue-700 mt-2">
               Please share this password with the student. They should change it on first login.
             </p>
+          </div>
+        )}
+
+        {/* CSV Upload Form */}
+        {showUploadForm && (
+          <div className="mb-6 bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold flex items-center">
+                <FileText className="h-5 w-5 mr-2" />
+                Upload Students CSV
+              </h2>
+              <button
+                onClick={() => {
+                  setShowUploadForm(false);
+                  setUploadResults(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+              <h3 className="font-medium text-blue-900 mb-2">CSV Format Requirements:</h3>
+              <p className="text-sm text-blue-700 mb-2">
+                Your CSV file must include these columns in this exact order:
+              </p>
+              <code className="text-xs bg-white p-2 rounded block">
+                student_id,first_name,second_name,last_name,email,gender,batch,disability_status
+              </code>
+              <p className="text-xs text-blue-600 mt-2">
+                • Gender: "male" or "female"<br/>
+                • Disability Status: "yes" or "no"<br/>
+                • Passwords will be auto-generated as: last_name + "1234abcd#"
+              </p>
+            </div>
+
+            <form onSubmit={handleCSVUpload} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select CSV File
+                </label>
+                <input
+                  type="file"
+                  accept=".csv"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  type="submit"
+                  disabled={uploading}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                >
+                  {uploading ? 'Uploading...' : 'Upload Students'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowUploadForm(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+
+            {/* Upload Results */}
+            {uploadResults && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-medium text-gray-900 mb-2">Upload Results:</h3>
+                <div className="text-sm space-y-1">
+                  <p><span className="font-medium">Total Records:</span> {uploadResults.total}</p>
+                  <p><span className="font-medium text-green-600">Created:</span> {uploadResults.created}</p>
+                  <p><span className="font-medium text-yellow-600">Skipped:</span> {uploadResults.skipped}</p>
+                  {uploadResults.errors.length > 0 && (
+                    <div className="mt-2">
+                      <p className="font-medium text-red-600">Errors:</p>
+                      <ul className="list-disc list-inside text-red-600 text-xs max-h-32 overflow-y-auto">
+                        {uploadResults.errors.map((error: string, index: number) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
