@@ -144,6 +144,7 @@ export default function SignIn() {
               <div className="text-xs text-gray-600 space-y-1">
                 <div><strong>Admin:</strong> EMP001 / default123</div>
                 <div><strong>Directorate:</strong> EMP002 / default123</div>
+                <div><strong>Coordinator:</strong> EMP0010 / default123</div>
                 <div><strong>Proctor:</strong> EMP004 / default123</div>
                 <div><strong>Student:</strong> DMU001 / default123</div>
               </div>

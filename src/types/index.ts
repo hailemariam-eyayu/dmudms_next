@@ -34,7 +34,10 @@ export interface Employee {
   first_name: string;
   last_name: string;
   email: string;
-  role: 'admin' | 'directorate' | 'coordinator' | 'proctor' | 'registrar' | 'maintainer';
+  gender?: 'male' | 'female';
+  phone?: string;
+  department?: string;
+  role: 'admin' | 'directorate' | 'coordinator' | 'proctor' | 'proctor_manager' | 'registrar' | 'maintainer';
   status: 'active' | 'inactive';
   password?: string;
 }

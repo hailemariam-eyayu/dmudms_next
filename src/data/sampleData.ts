@@ -164,6 +164,17 @@ export const sampleEmployees: Employee[] = [
     email: 'james.miller@dmu.edu',
     role: 'registrar',
     status: 'active'
+  },
+  {
+    employee_id: 'EMP0010',
+    first_name: 'Alex',
+    last_name: 'Johnson',
+    email: 'alex.johnson@dmu.edu',
+    gender: 'male',
+    role: 'coordinator',
+    status: 'active',
+    phone: '+251911123456',
+    department: 'Student Affairs'
   }
 ];
 
