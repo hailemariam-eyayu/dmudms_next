@@ -3,60 +3,46 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import { 
-  Package, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Search,
-  AlertCircle,
-  CheckCircle,
-  XCircle
-} from 'lucide-react';
+import { Package, Plus, Edit, Trash2, Search, Building, AlertCircle } from 'lucide-react';
 
 export default function ProctorMaterialsPage() {
   const { data: session, status } = useSession();
   const [materials, setMaterials] = useState<any[]>([]);
-  const [filteredMaterials, setFilteredMaterials] = useState<any[]>([]);
+  const [assignedBlocks, setAssignedBlocks] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<any>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
-    if (!session || session.user.role !== 'proctor') {
+    if (!session || !['proctor', 'proctor_manager'].includes(session.user.role)) {
       redirect('/auth/signin');
-      return;
+    } else {
+      fetchMaterials();
     }
-
-    fetchMaterials();
   }, [session, status]);
-
-  useEffect(() => {
-    filterMaterials();
-  }, [materials, searchTerm]);
 
   const fetchMaterials = async () => {
     try {
       // Get proctor's assigned blocks first
-      const assignedResponse = await fetch(`/api/proctor/assigned-students?proctorId=${session?.user?.id}`);
+      const assignedResponse = await fetch('/api/proctor/assigned-students');
       const assignedData = await assignedResponse.json();
       
       if (assignedData.success && assignedData.data.length > 0) {
-        // Get unique blocks
-        const blocks = [...new Set(assignedData.data.map((student: any) => student.block))];
+        const blocks = [...new Set(assignedData.data.map((s: any) => s.block))];
+        setAssignedBlocks(blocks);
         
-        // Fetch materials for each block
-        const materialPromises = blocks.map(block => 
+        // Fetch materials for assigned blocks
+        const materialsPromises = blocks.map(block => 
           fetch(`/api/materials?block=${block}`).then(res => res.json())
         );
         
-        const materialResponses = await Promise.all(materialPromises);
-        const allMaterials = materialResponses
-          .filter(response => response.success)
-          .flatMap(response => response.data);
+        const materialsResults = await Promise.all(materialsPromises);
+        const allMaterials = materialsResults
+          .filter(result => result.success)
+          .flatMap(result => result.data);
         
         setMaterials(allMaterials);
       }
@@ -68,78 +54,58 @@ export default function ProctorMaterialsPage() {
     }
   };
 
-  const filterMaterials = () => {
-    let filtered = materials;
-
-    if (searchTerm) {
-      filtered = filtered.filter(material =>
-        material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        material.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        material.block.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredMaterials(filtered);
-  };
-
-  const handleAddMaterial = async (materialData: any) => {
+  const handleCreateMaterial = async (materialData: any) => {
     try {
       const response = await fetch('/api/materials', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          ...materialData,
-          added_by: session?.user?.id,
-          added_date: new Date()
-        })
+        body: JSON.stringify(materialData)
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setMessage({ type: 'success', text: 'Material added successfully!' });
-        setShowAddModal(false);
+        setMessage({ type: 'success', text: 'Material registration created successfully!' });
+        setShowCreateForm(false);
         fetchMaterials();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to add material' });
+        setMessage({ type: 'error', text: data.error || 'Failed to create material registration' });
       }
     } catch (error) {
-      console.error('Error adding material:', error);
-      setMessage({ type: 'error', text: 'Failed to add material' });
+      console.error('Error creating material:', error);
+      setMessage({ type: 'error', text: 'Failed to create material registration' });
     }
   };
 
-  const handleUpdateMaterial = async (materialId: string, updates: any) => {
+  const handleUpdateMaterial = async (materialId: string, materialData: any) => {
     try {
       const response = await fetch(`/api/materials/${materialId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(updates)
+        body: JSON.stringify(materialData)
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setMessage({ type: 'success', text: 'Material updated successfully!' });
+        setMessage({ type: 'success', text: 'Material registration updated successfully!' });
         setEditingMaterial(null);
         fetchMaterials();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to update material' });
+        setMessage({ type: 'error', text: data.error || 'Failed to update material registration' });
       }
     } catch (error) {
       console.error('Error updating material:', error);
-      setMessage({ type: 'error', text: 'Failed to update material' });
+      setMessage({ type: 'error', text: 'Failed to update material registration' });
     }
   };
 
   const handleDeleteMaterial = async (materialId: string) => {
-    if (!confirm('Are you sure you want to delete this material?')) {
-      return;
-    }
+    if (!confirm('Are you sure you want to delete this material registration?')) return;
 
     try {
       const response = await fetch(`/api/materials/${materialId}`, {
@@ -149,42 +115,21 @@ export default function ProctorMaterialsPage() {
       const data = await response.json();
 
       if (data.success) {
-        setMessage({ type: 'success', text: 'Material deleted successfully!' });
+        setMessage({ type: 'success', text: 'Material registration deleted successfully!' });
         fetchMaterials();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to delete material' });
+        setMessage({ type: 'error', text: data.error || 'Failed to delete material registration' });
       }
     } catch (error) {
       console.error('Error deleting material:', error);
-      setMessage({ type: 'error', text: 'Failed to delete material' });
+      setMessage({ type: 'error', text: 'Failed to delete material registration' });
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available':
-        return 'bg-green-100 text-green-800';
-      case 'low_stock':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'out_of_stock':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'available':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'low_stock':
-        return <AlertCircle className="h-4 w-4" />;
-      case 'out_of_stock':
-        return <XCircle className="h-4 w-4" />;
-      default:
-        return null;
-    }
-  };
+  const filteredMaterials = materials.filter(material =>
+    material.block.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    material.room.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (status === 'loading' || loading) {
     return (
@@ -206,16 +151,16 @@ export default function ProctorMaterialsPage() {
             <div className="flex items-center">
               <Package className="h-8 w-8 text-green-600 mr-3" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Materials Management</h1>
-                <p className="text-gray-600">Manage materials for your assigned blocks</p>
+                <h1 className="text-3xl font-bold text-gray-900">Room Materials</h1>
+                <p className="text-gray-600">Register and manage room materials inventory</p>
               </div>
             </div>
             <button
-              onClick={() => setShowAddModal(true)}
+              onClick={() => setShowCreateForm(true)}
               className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Material
+              Register Materials
             </button>
           </div>
         </div>
@@ -230,159 +175,370 @@ export default function ProctorMaterialsPage() {
           </div>
         )}
 
+        {/* Search */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="h-5 w-5 absolute left-3 top-3 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by block or room..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+
         {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <Package className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
                 <div className="text-2xl font-bold text-gray-900">{materials.length}</div>
-                <div className="text-gray-600">Total Materials</div>
+                <div className="text-gray-600">Registered Rooms</div>
               </div>
             </div>
           </div>
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
-              <CheckCircle className="h-8 w-8 text-green-600" />
+              <Building className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <div className="text-2xl font-bold text-gray-900">
-                  {materials.filter(m => m.status === 'available').length}
-                </div>
-                <div className="text-gray-600">Available</div>
+                <div className="text-2xl font-bold text-gray-900">{assignedBlocks.length}</div>
+                <div className="text-gray-600">Assigned Blocks</div>
               </div>
             </div>
           </div>
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
-              <AlertCircle className="h-8 w-8 text-yellow-600" />
+              <Package className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
                 <div className="text-2xl font-bold text-gray-900">
-                  {materials.filter(m => m.status === 'low_stock').length}
+                  {materials.reduce((sum, m) => sum + m.chair + m.tables + m.locker, 0)}
                 </div>
-                <div className="text-gray-600">Low Stock</div>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <XCircle className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <div className="text-2xl font-bold text-gray-900">
-                  {materials.filter(m => m.status === 'out_of_stock').length}
-                </div>
-                <div className="text-gray-600">Out of Stock</div>
+                <div className="text-gray-600">Total Items</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="bg-white p-6 rounded-lg shadow mb-8">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <input
-              type="text"
-              placeholder="Search materials..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
+        {/* Materials Table */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Material Registrations</h2>
           </div>
-        </div>
-
-        {/* Materials Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMaterials.map((material) => (
-            <div key={material._id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center">
-                    <Package className="h-6 w-6 text-green-600 mr-2" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{material.name}</h3>
-                      <p className="text-sm text-gray-500">{material.category}</p>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => setEditingMaterial(material)}
-                      className="p-1 text-gray-400 hover:text-blue-600"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteMaterial(material._id)}
-                      className="p-1 text-gray-400 hover:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Block:</span>
-                    <span className="font-medium">{material.block}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Quantity:</span>
-                    <span className="font-medium">{material.quantity}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Unit:</span>
-                    <span className="font-medium">{material.unit}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Status:</span>
-                    <span className={`inline-flex items-center px-2 py-1 text-xs rounded-full ${getStatusColor(material.status)}`}>
-                      {getStatusIcon(material.status)}
-                      <span className="ml-1 capitalize">{material.status.replace('_', ' ')}</span>
-                    </span>
-                  </div>
-                  {material.description && (
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">Description:</span>
-                      <p className="mt-1">{material.description}</p>
-                    </div>
-                  )}
-                </div>
-
-                {material.last_updated && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="text-xs text-gray-500">
-                      Last updated: {new Date(material.last_updated).toLocaleDateString()}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Room
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Unlocker
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Furniture
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Bedding
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Other
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredMaterials.map((material) => (
+                  <tr key={material._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {material.block} - {material.room}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Registered: {new Date(material.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {material.unlocker}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div>
+                        <div>Chairs: {material.chair}</div>
+                        <div>Tables: {material.tables}</div>
+                        <div>Lockers: {material.locker}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div>
+                        <div>Pure Foam: {material.pure_foam}</div>
+                        <div>Damaged Foam: {material.damaged_foam}</div>
+                        <div>Tiras: {material.tiras}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div>Chibud: {material.chibud}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setEditingMaterial(material)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMaterial(material._id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {filteredMaterials.length === 0 && (
           <div className="text-center py-12">
             <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Materials Found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Material Registrations</h3>
             <p className="text-gray-500 mb-4">
-              {searchTerm 
-                ? 'No materials match your search criteria.' 
-                : 'No materials have been added to your blocks yet.'}
+              {searchTerm ? 'No materials match your search criteria.' : 'No room materials have been registered yet.'}
             </p>
             {!searchTerm && (
               <button
-                onClick={() => setShowAddModal(true)}
+                onClick={() => setShowCreateForm(true)}
                 className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add First Material
+                Register First Room
               </button>
             )}
           </div>
         )}
       </div>
 
-      {/* Add/Edit Material Modal would go here */}
-      {/* For brevity, I'm not including the full modal implementation */}
+      {/* Create/Edit Material Modal */}
+      {(showCreateForm || editingMaterial) && (
+        <MaterialFormModal
+          material={editingMaterial}
+          assignedBlocks={assignedBlocks}
+          onClose={() => {
+            setShowCreateForm(false);
+            setEditingMaterial(null);
+          }}
+          onSubmit={(data) => {
+            if (editingMaterial) {
+              handleUpdateMaterial(editingMaterial._id, data);
+            } else {
+              handleCreateMaterial(data);
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Material Form Modal Component
+function MaterialFormModal({ 
+  material, 
+  assignedBlocks, 
+  onClose, 
+  onSubmit 
+}: { 
+  material?: any;
+  assignedBlocks: string[];
+  onClose: () => void;
+  onSubmit: (data: any) => void;
+}) {
+  const [formData, setFormData] = useState({
+    block: material?.block || (assignedBlocks[0] || ''),
+    room: material?.room || '',
+    unlocker: material?.unlocker || 'Original',
+    locker: material?.locker || 0,
+    chair: material?.chair || 0,
+    pure_foam: material?.pure_foam || 0,
+    damaged_foam: material?.damaged_foam || 0,
+    tiras: material?.tiras || 0,
+    tables: material?.tables || 0,
+    chibud: material?.chibud || 0
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+        <div className="mt-3">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            {material ? 'Edit Material Registration' : 'Register Room Materials'}
+          </h3>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Block</label>
+                <select
+                  value={formData.block}
+                  onChange={(e) => setFormData({ ...formData, block: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  required
+                >
+                  {assignedBlocks.map(block => (
+                    <option key={block} value={block}>{block}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Room</label>
+                <input
+                  type="text"
+                  value={formData.room}
+                  onChange={(e) => setFormData({ ...formData, room: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="e.g., 101, 102A"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Unlocker Type</label>
+              <select
+                value={formData.unlocker}
+                onChange={(e) => setFormData({ ...formData, unlocker: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="Original">Original</option>
+                <option value="Copy">Copy</option>
+              </select>
+            </div>
+
+            <div>
+              <h4 className="text-md font-medium text-gray-900 mb-3">Furniture Items</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Chairs</label>
+                  <input
+                    type="number"
+                    value={formData.chair}
+                    onChange={(e) => setFormData({ ...formData, chair: parseInt(e.target.value) || 0 })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    min="0"
+                    max="6"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tables</label>
+                  <input
+                    type="number"
+                    value={formData.tables}
+                    onChange={(e) => setFormData({ ...formData, tables: parseInt(e.target.value) || 0 })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    min="0"
+                    max="6"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Lockers</label>
+                  <input
+                    type="number"
+                    value={formData.locker}
+                    onChange={(e) => setFormData({ ...formData, locker: parseInt(e.target.value) || 0 })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    min="0"
+                    max="6"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-md font-medium text-gray-900 mb-3">Bedding Items</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Pure Foam</label>
+                  <input
+                    type="number"
+                    value={formData.pure_foam}
+                    onChange={(e) => setFormData({ ...formData, pure_foam: parseInt(e.target.value) || 0 })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    min="0"
+                    max="6"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Damaged Foam</label>
+                  <input
+                    type="number"
+                    value={formData.damaged_foam}
+                    onChange={(e) => setFormData({ ...formData, damaged_foam: parseInt(e.target.value) || 0 })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    min="0"
+                    max="6"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tiras</label>
+                  <input
+                    type="number"
+                    value={formData.tiras}
+                    onChange={(e) => setFormData({ ...formData, tiras: parseInt(e.target.value) || 0 })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    min="0"
+                    max="6"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-md font-medium text-gray-900 mb-3">Other Items</h4>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Chibud</label>
+                <input
+                  type="number"
+                  value={formData.chibud}
+                  onChange={(e) => setFormData({ ...formData, chibud: parseInt(e.target.value) || 0 })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  min="0"
+                  max="6"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                {material ? 'Update Registration' : 'Register Materials'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

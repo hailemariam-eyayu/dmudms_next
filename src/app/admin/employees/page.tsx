@@ -13,6 +13,8 @@ interface Employee {
   email: string;
   role: string;
   status: 'active' | 'inactive';
+  phone?: string;
+  department?: string;
 }
 
 export default function EmployeeManagement() {
@@ -29,7 +31,9 @@ export default function EmployeeManagement() {
     last_name: '',
     email: '',
     role: 'proctor',
-    status: 'active' as 'active' | 'inactive'
+    status: 'active' as 'active' | 'inactive',
+    phone: '',
+    department: ''
   });
 
   useEffect(() => {

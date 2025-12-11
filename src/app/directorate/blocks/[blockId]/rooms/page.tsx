@@ -1,0 +1,358 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { redirect, useRouter } from 'next/navigation';
+import { Building, Plus, Edit, Trash2, Users, ArrowLeft } from 'lucide-react';
+
+export default function BlockRoomsPage({ params }: { params: Promise<{ blockId: string }> }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [blockId, setBlockId] = useState<string>('');
+  const [block, setBlock] = useState<any>(null);
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+
+  useEffect(() => {
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setBlockId(resolvedParams.blockId);
+    };
+    getParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!session || !['admin', 'directorate'].includes(session.user.role)) {
+      redirect('/auth/signin');
+    } else if (blockId) {
+      fetchBlockAndRooms();
+    }
+  }, [session, status, blockId]);
+
+  const fetchBlockAndRooms = async () => {
+    try {
+      const [blockRes, roomsRes] = await Promise.all([
+        fetch(`/api/blocks/${blockId}`),
+        fetch(`/api/rooms?block=${blockId}`)
+      ]);
+
+      const [blockData, roomsData] = await Promise.all([
+        blockRes.json(),
+        roomsRes.json()
+      ]);
+
+      if (blockData.success) setBlock(blockData.data);
+      if (roomsData.success) setRooms(roomsData.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (status === 'loading' || loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading rooms...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Blocks
+          </button>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Building className="h-8 w-8 text-purple-600 mr-3" />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {block?.name || blockId} - Rooms
+                </h1>
+                <p className="text-gray-600">Manage rooms in this block</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Room
+            </button>
+          </div>
+        </div>
+
+        {/* Block Info */}
+        {block && (
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Block Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Block ID</label>
+                <p className="text-sm text-gray-900">{block.block_id}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Name</label>
+                <p className="text-sm text-gray-900">{block.name}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Reserved For</label>
+                <p className="text-sm text-gray-900 capitalize">{block.reserved_for}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Total Rooms</label>
+                <p className="text-sm text-gray-900">{rooms.length}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center">
+              <Building className="h-8 w-8 text-blue-600" />
+              <div className="ml-4">
+                <div className="text-2xl font-bold text-gray-900">{rooms.length}</div>
+                <div className="text-gray-600">Total Rooms</div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-green-600" />
+              <div className="ml-4">
+                <div className="text-2xl font-bold text-gray-900">
+                  {rooms.filter(r => r.status === 'available').length}
+                </div>
+                <div className="text-gray-600">Available</div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-red-600" />
+              <div className="ml-4">
+                <div className="text-2xl font-bold text-gray-900">
+                  {rooms.filter(r => r.status === 'occupied').length}
+                </div>
+                <div className="text-gray-600">Occupied</div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center">
+              <Building className="h-8 w-8 text-yellow-600" />
+              <div className="ml-4">
+                <div className="text-2xl font-bold text-gray-900">
+                  {rooms.filter(r => r.status === 'maintenance').length}
+                </div>
+                <div className="text-gray-600">Maintenance</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Rooms Grid */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Rooms</h2>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {rooms.map((room) => (
+                <div key={room._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium text-gray-900">{room.room_id}</h3>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      room.status === 'available' 
+                        ? 'bg-green-100 text-green-800'
+                        : room.status === 'occupied'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {room.status}
+                    </span>
+                  </div>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <div>Capacity: {room.capacity}</div>
+                    <div>Current: {room.current_occupancy || 0}</div>
+                    <div>Floor: {room.floor}</div>
+                  </div>
+                  <div className="mt-3 flex justify-end space-x-2">
+                    <button className="p-1 text-gray-400 hover:text-blue-600">
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button className="p-1 text-gray-400 hover:text-red-600">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {rooms.length === 0 && (
+              <div className="text-center py-12">
+                <Building className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Rooms</h3>
+                <p className="text-gray-500 mb-4">No rooms have been added to this block yet.</p>
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Room
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Create Room Modal */}
+      {showCreateForm && (
+        <CreateRoomModal
+          blockId={blockId}
+          onClose={() => setShowCreateForm(false)}
+          onSuccess={() => {
+            setShowCreateForm(false);
+            fetchBlockAndRooms();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Create Room Modal Component
+function CreateRoomModal({ 
+  blockId, 
+  onClose, 
+  onSuccess 
+}: { 
+  blockId: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [formData, setFormData] = useState({
+    room_id: '',
+    capacity: 2,
+    floor: 1,
+    status: 'available'
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const response = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...formData,
+          block: blockId,
+          current_occupancy: 0
+        })
+      });
+
+      if (response.ok) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error('Error creating room:', error);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="mt-3">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Room</h3>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Room ID</label>
+              <input
+                type="text"
+                value={formData.room_id}
+                onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="e.g., 101, 102A"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
+              <input
+                type="number"
+                value={formData.capacity}
+                onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                min="1"
+                max="6"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Floor</label>
+              <input
+                type="number"
+                value={formData.floor}
+                onChange={(e) => setFormData({ ...formData, floor: parseInt(e.target.value) })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                min="1"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="available">Available</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="reserved">Reserved</option>
+              </select>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              >
+                Create Room
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
