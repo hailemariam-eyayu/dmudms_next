@@ -31,7 +31,7 @@ export default function ProctorMaterialsPage() {
       const assignedData = await assignedResponse.json();
       
       if (assignedData.success && assignedData.data.length > 0) {
-        const blocks = [...new Set(assignedData.data.map((s: any) => s.block))];
+        const blocks = [...new Set(assignedData.data.map((s: any) => s.block))] as string[];
         setAssignedBlocks(blocks);
         
         // Fetch materials for assigned blocks
