@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { signIn, getSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { signIn, getSession, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -13,6 +13,41 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const { data: session, status } = useSession();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (status === 'loading') return;
+    
+    if (session) {
+      // User is already logged in, redirect to dashboard
+      router.push('/dashboard');
+    }
+  }, [session, status, router]);
+
+  // Show loading while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't show signin form if user is already authenticated
+  if (session) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Redirecting to dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +135,7 @@ export default function SignIn() {
                     type="text"
                     required
                     className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="DMU001 or EMP001"
+                    placeholder="Student1 or Employee1"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                   />
@@ -140,17 +175,17 @@ export default function SignIn() {
 
             {/* Demo Credentials */}
             <div className="mt-6 p-4 bg-gray-50 rounded-md">
-              <h4 className="text-sm font-medium text-gray-900 mb-2">Demo Credentials (All passwords: default123):</h4>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Production Credentials (All passwords: password):</h4>
               <div className="text-xs text-gray-600 space-y-1">
-                <div><strong>Admin:</strong> EMP001 / default123</div>
-                <div><strong>Directorate:</strong> EMP002 / default123</div>
-                <div><strong>Coordinator:</strong> EMP003 / default123</div>
-                <div><strong>Proctor (Block A):</strong> EMP004 / default123</div>
-                <div><strong>Registrar:</strong> EMP005 / default123</div>
-                <div><strong>Proctor (Block B):</strong> EMP006 / default123</div>
-                <div><strong>Proctor (Block C):</strong> EMP007 / default123</div>
-                <div><strong>Coordinator 2:</strong> EMP0010 / default123</div>
-                <div><strong>Student:</strong> DMU001 / default123</div>
+                <div><strong>Admin:</strong> Employee1 / password</div>
+                <div><strong>Coordinator:</strong> Employee2 / password</div>
+                <div><strong>Directorate:</strong> Employee3 / password</div>
+                <div><strong>Coordinator:</strong> Employee4 / password</div>
+                <div><strong>Proctor:</strong> Employee5 / password</div>
+                <div><strong>Registrar:</strong> Employee6 / password</div>
+                <div><strong>Proctor:</strong> Employee7 / password</div>
+                <div><strong>Proctor:</strong> Employee8 / password</div>
+                <div><strong>Student:</strong> Student1 / password</div>
               </div>
             </div>
           </CardContent>
