@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import mongoDataStore from '@/lib/mongoDataStore';
+import { mongoDataStore } from '@/lib/mongoDataStore';
 
 export async function GET(
   request: NextRequest,
@@ -9,70 +9,58 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id: studentId } = await params;
-
-    // Students can only access their own data, others need appropriate permissions
-    if (session.user.role === 'student' && session.user.id !== studentId) {
-      return NextResponse.json(
-        { success: false, error: 'Access denied' },
-        { status: 403 }
-      );
-    }
+    const { id } = await params;
 
     // Get student placement
-    const placement = await mongoDataStore.getStudentPlacement(studentId);
-    
+    const placements = await mongoDataStore.getStudentPlacements();
+    const placement = placements.find(p => p.student_id === id);
+
     if (!placement) {
-      return NextResponse.json({
-        success: true,
-        data: null
+      return NextResponse.json({ 
+        success: true, 
+        data: null,
+        message: 'No room assignment found' 
       });
     }
 
-    // Get additional placement details
-    const [student, block, room] = await Promise.all([
-      mongoDataStore.getStudent(studentId),
-      mongoDataStore.getBlock(placement.block),
-      mongoDataStore.getRoom(placement.room, placement.block)
-    ]);
+    // Get room and block details
+    const rooms = await mongoDataStore.getRooms();
+    const blocks = await mongoDataStore.getBlocks();
+    
+    const room = rooms.find(r => r.room_id === placement.room);
+    const block = blocks.find(b => b.block_id === placement.block);
 
-    // Get proctor information
-    let proctorName = null;
-    if (block?.proctor_id) {
-      const proctor = await mongoDataStore.getEmployee(block.proctor_id);
-      if (proctor) {
-        proctorName = `${proctor.first_name} ${proctor.last_name}`;
-      }
-    }
-
-    const placementDetails = {
+    const placementWithDetails = {
       ...placement,
-      student_name: student ? `${student.first_name} ${student.last_name}` : null,
-      block_name: block?.name || placement.block,
-      room_capacity: room?.capacity || null,
-      room_occupancy: room?.current_occupancy || null,
-      proctor_name: proctorName,
-      emergency_contact: student?.emergency_contact || null
+      room_details: room ? {
+        room_number: room.room_number,
+        floor: room.floor,
+        capacity: room.capacity,
+        current_occupancy: room.current_occupancy,
+        disability_accessible: room.disability_accessible
+      } : null,
+      block_details: block ? {
+        name: block.name,
+        reserved_for: block.reserved_for,
+        location: block.location,
+        proctor_id: block.proctor_id
+      } : null
     };
 
-    return NextResponse.json({
-      success: true,
-      data: placementDetails
+    return NextResponse.json({ 
+      success: true, 
+      data: placementWithDetails 
     });
 
   } catch (error) {
     console.error('Error fetching student placement:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Failed to fetch placement information' 
+    }, { status: 500 });
   }
 }

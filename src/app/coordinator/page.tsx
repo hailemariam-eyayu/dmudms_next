@@ -11,8 +11,34 @@ import {
   BarChart3,
   Settings,
   Eye,
-  UserPlus
+  UserPlus,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Calendar,
+  User,
+  Activity
 } from 'lucide-react';
+
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  status: 'pending' | 'in_progress' | 'completed';
+  due_date: string;
+  assigned_to?: string;
+}
+
+interface SessionInfo {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  expires: string;
+}
 
 export default function CoordinatorDashboard() {
   const { data: session, status } = useSession();
@@ -20,6 +46,8 @@ export default function CoordinatorDashboard() {
   const [proctors, setProctors] = useState<any[]>([]);
   const [blocks, setBlocks] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,18 +61,20 @@ export default function CoordinatorDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [statsRes, employeesRes, blocksRes, placementsRes] = await Promise.all([
+      const [statsRes, employeesRes, blocksRes, placementsRes, sessionRes] = await Promise.all([
         fetch('/api/dashboard/stats'),
         fetch('/api/employees'),
         fetch('/api/blocks'),
-        fetch('/api/placements')
+        fetch('/api/placements'),
+        fetch('/api/debug/session')
       ]);
 
-      const [statsData, employeesData, blocksData, placementsData] = await Promise.all([
+      const [statsData, employeesData, blocksData, placementsData, sessionData] = await Promise.all([
         statsRes.json(),
         employeesRes.json(),
         blocksRes.json(),
-        placementsRes.json()
+        placementsRes.json(),
+        sessionRes.json()
       ]);
 
       if (statsData.success) setStats(statsData.data);
@@ -56,10 +86,71 @@ export default function CoordinatorDashboard() {
       }
       if (blocksData.success) setBlocks(blocksData.data);
       if (placementsData.success) setAssignments(placementsData.data);
+      if (sessionData.success) setSessionInfo(sessionData.session);
+
+      // Sample tasks for coordinator
+      const sampleTasks: Task[] = [
+        {
+          id: '1',
+          title: 'Review Proctor Assignments',
+          description: 'Review and approve pending proctor assignments for new blocks',
+          priority: 'high',
+          status: 'pending',
+          due_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+          assigned_to: session?.user.id
+        },
+        {
+          id: '2',
+          title: 'Monthly Block Inspection',
+          description: 'Coordinate monthly inspection of all dormitory blocks',
+          priority: 'medium',
+          status: 'in_progress',
+          due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          assigned_to: session?.user.id
+        },
+        {
+          id: '3',
+          title: 'Update Proctor Training Materials',
+          description: 'Update training materials for new proctor orientation',
+          priority: 'low',
+          status: 'pending',
+          due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          assigned_to: session?.user.id
+        },
+        {
+          id: '4',
+          title: 'Student Complaint Resolution',
+          description: 'Address pending student complaints about room conditions',
+          priority: 'high',
+          status: 'in_progress',
+          due_date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+          assigned_to: session?.user.id
+        }
+      ];
+      setTasks(sampleTasks);
+
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-100 text-red-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed': return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'in_progress': return <Clock className="h-4 w-4 text-yellow-600" />;
+      case 'pending': return <AlertTriangle className="h-4 w-4 text-red-600" />;
+      default: return <Clock className="h-4 w-4 text-gray-600" />;
     }
   };
 
@@ -79,12 +170,25 @@ export default function CoordinatorDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center">
-            <Settings className="h-8 w-8 text-green-600 mr-3" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Coordinator Dashboard</h1>
-              <p className="text-gray-600">Manage proctor assignments and dormitory operations</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Settings className="h-8 w-8 text-green-600 mr-3" />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Coordinator Dashboard</h1>
+                <p className="text-gray-600">Manage proctor assignments and dormitory operations</p>
+              </div>
             </div>
+            {sessionInfo && (
+              <div className="bg-white rounded-lg shadow p-4">
+                <div className="flex items-center">
+                  <User className="h-5 w-5 text-gray-400 mr-2" />
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">{sessionInfo.user.name}</div>
+                    <div className="text-xs text-gray-500">Session expires: {new Date(sessionInfo.expires).toLocaleString()}</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -133,8 +237,8 @@ export default function CoordinatorDashboard() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Quick Actions and Tasks */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
             <div className="space-y-3">
@@ -184,6 +288,46 @@ export default function CoordinatorDashboard() {
             </div>
           </div>
 
+          {/* Tasks Management */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">My Tasks</h2>
+              <div className="flex items-center">
+                <Activity className="h-5 w-5 text-blue-600 mr-1" />
+                <span className="text-sm text-gray-600">{tasks.filter(t => t.status !== 'completed').length} active</span>
+              </div>
+            </div>
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {tasks.slice(0, 6).map((task) => (
+                <div key={task.id} className="p-3 border border-gray-200 rounded-lg">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center">
+                      {getStatusIcon(task.status)}
+                      <span className="ml-2 text-sm font-medium text-gray-900">{task.title}</span>
+                    </div>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(task.priority)}`}>
+                      {task.priority}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">{task.description}</p>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      task.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      task.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {task.status.replace('_', ' ')}
+                    </span>
+                    <div className="flex items-center text-xs text-gray-500">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {new Date(task.due_date).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Recent Proctor Assignments */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
@@ -192,7 +336,7 @@ export default function CoordinatorDashboard() {
                 <Eye className="h-5 w-5" />
               </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-80 overflow-y-auto">
               {blocks.slice(0, 5).map((block) => {
                 const assignedProctor = proctors.find(p => p.employee_id === block.proctor_id);
                 return (

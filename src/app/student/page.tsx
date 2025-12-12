@@ -133,12 +133,12 @@ export default function StudentDashboard() {
 
           <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
             <div className="flex items-center">
-              <AlertTriangle className="h-8 w-8 text-red-600" />
+              <Phone className="h-8 w-8 text-red-600" />
               <div className="ml-4">
-                <h3 className="text-lg font-semibold text-gray-900">Emergency</h3>
-                <p className="text-gray-600">Report emergencies</p>
-                <a href="/student/emergency" className="text-red-600 hover:text-red-700 font-medium">
-                  Report →
+                <h3 className="text-lg font-semibold text-gray-900">Emergency Contact</h3>
+                <p className="text-gray-600">Manage emergency contacts</p>
+                <a href="/student/emergency-contact" className="text-red-600 hover:text-red-700 font-medium">
+                  Manage →
                 </a>
               </div>
             </div>
@@ -309,10 +309,10 @@ export default function StudentDashboard() {
                   <div className="font-medium text-green-800">Submit Request</div>
                   <div className="text-sm text-green-600">Request maintenance or services</div>
                 </button>
-                <button className="w-full text-left p-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
-                  <div className="font-medium text-red-800">Report Emergency</div>
-                  <div className="text-sm text-red-600">Report urgent issues</div>
-                </button>
+                <a href="/student/emergency-contact" className="block w-full text-left p-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                  <div className="font-medium text-red-800">Emergency Contact</div>
+                  <div className="text-sm text-red-600">Update emergency contact info</div>
+                </a>
                 <button className="w-full text-left p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
                   <div className="font-medium text-blue-800">Update Profile</div>
                   <div className="text-sm text-blue-600">Update your information</div>
