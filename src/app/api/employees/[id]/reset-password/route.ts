@@ -31,9 +31,11 @@ export async function POST(
     await mongoDataStore.updateEmployee(id, { password: hashedPassword });
     
     // Send password reset email
+    let emailSent = false;
     if (employee.email) {
       try {
-        await emailService.sendPasswordResetEmail({
+        console.log(`📧 Attempting to send password reset email to: ${employee.email}`);
+        const emailResult = await emailService.sendPasswordResetEmail({
           name: `${employee.first_name} ${employee.last_name}`,
           email: employee.email,
           userId: employee.employee_id,
@@ -41,17 +43,22 @@ export async function POST(
           loginUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`,
           userType: 'employee'
         });
+        emailSent = emailResult;
+        console.log(`📧 Password reset email result: ${emailResult ? 'SUCCESS' : 'FAILED'}`);
       } catch (error) {
         console.error('Failed to send password reset email:', error);
+        emailSent = false;
         // Don't fail the request if email fails
       }
+    } else {
+      console.log('📧 Password reset email not sent - no email address found');
     }
     
     return NextResponse.json({
       success: true,
       message: 'Password reset successfully',
       newPassword: newPassword,
-      emailSent: !!employee.email
+      emailSent: emailSent
     });
   } catch (error) {
     console.error('Error resetting password:', error);

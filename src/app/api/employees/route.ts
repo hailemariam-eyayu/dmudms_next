@@ -64,9 +64,11 @@ export async function POST(request: NextRequest) {
     const result = await mongoDataStore.createEmployee(employeeData);
     
     // Send welcome email with credentials
+    let emailSent = false;
     if (generatedPassword && employeeData.email) {
       try {
-        await emailService.sendWelcomeEmail({
+        console.log(`📧 Attempting to send welcome email to: ${employeeData.email}`);
+        const emailResult = await emailService.sendWelcomeEmail({
           name: `${employeeData.first_name} ${employeeData.last_name}`,
           email: employeeData.email,
           userId: employeeData.employee_id,
@@ -74,10 +76,15 @@ export async function POST(request: NextRequest) {
           loginUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`,
           userType: 'employee'
         });
+        emailSent = emailResult;
+        console.log(`📧 Email send result: ${emailResult ? 'SUCCESS' : 'FAILED'}`);
       } catch (error) {
         console.error('Failed to send welcome email:', error);
+        emailSent = false;
         // Don't fail the request if email fails
       }
+    } else {
+      console.log(`📧 Email not sent - generatedPassword: ${!!generatedPassword}, email: ${!!employeeData.email}`);
     }
     
     // Return the result with the generated password (for admin to share with employee)
@@ -85,7 +92,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: result,
       ...(generatedPassword && { generatedPassword }),
-      emailSent: !!generatedPassword && !!employeeData.email
+      emailSent: emailSent
     };
     
     return NextResponse.json(response);

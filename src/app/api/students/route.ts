@@ -63,9 +63,11 @@ export async function POST(request: NextRequest) {
     const result = await mongoDataStore.createStudent(studentData);
     
     // Send welcome email with credentials
+    let emailSent = false;
     if (generatedPassword && studentData.email) {
       try {
-        await emailService.sendWelcomeEmail({
+        console.log(`📧 Attempting to send welcome email to: ${studentData.email}`);
+        const emailResult = await emailService.sendWelcomeEmail({
           name: `${studentData.first_name} ${studentData.second_name} ${studentData.last_name}`.trim(),
           email: studentData.email,
           userId: studentData.student_id,
@@ -73,17 +75,22 @@ export async function POST(request: NextRequest) {
           loginUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`,
           userType: 'student'
         });
+        emailSent = emailResult;
+        console.log(`📧 Email send result: ${emailResult ? 'SUCCESS' : 'FAILED'}`);
       } catch (error) {
         console.error('Failed to send welcome email:', error);
+        emailSent = false;
         // Don't fail the request if email fails
       }
+    } else {
+      console.log(`📧 Email not sent - generatedPassword: ${!!generatedPassword}, email: ${!!studentData.email}`);
     }
     
     return NextResponse.json({
       success: true,
       data: result,
       ...(generatedPassword && { generatedPassword }),
-      emailSent: !!generatedPassword && !!studentData.email
+      emailSent: emailSent
     });
   } catch (error: any) {
     console.error('Error creating student:', error);
