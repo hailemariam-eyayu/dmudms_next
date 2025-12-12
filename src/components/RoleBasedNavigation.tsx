@@ -75,7 +75,7 @@ export default function RoleBasedNavigation() {
           { name: 'Emergency Contact', href: '/student/emergency-contact', icon: Users },
           { name: 'Requests', href: '/student/requests', icon: ClipboardList },
           { name: 'Materials', href: '/student/materials', icon: Package },
-          { name: 'Emergency', href: '/student/emergency', icon: AlertTriangle }
+          { name: 'Emergency Contact', href: '/student/emergency-contact', icon: AlertTriangle }
         ];
       
       default:

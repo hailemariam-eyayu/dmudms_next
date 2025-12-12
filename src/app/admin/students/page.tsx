@@ -45,7 +45,7 @@ export default function AdminStudentManagement() {
 
   useEffect(() => {
     if (status === 'loading') return;
-    if (!session || session.user.role !== 'admin') {
+    if (!session || !['admin', 'directorate', 'coordinator'].includes(session.user.role)) {
       redirect('/auth/signin');
     } else {
       fetchStudents();
