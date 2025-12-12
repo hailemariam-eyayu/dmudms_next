@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { UserCheck, Building, Users, Save, AlertCircle } from 'lucide-react';
+import ProfileAvatar from '@/components/ProfileAvatar';
 
 export default function ProctorAssignmentPage() {
   const { data: session, status } = useSession();
@@ -237,11 +238,19 @@ export default function ProctorAssignmentPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {currentProctor ? (
-                          <div>
-                            <div className="font-medium text-gray-900">
-                              {currentProctor.first_name} {currentProctor.last_name}
+                          <div className="flex items-center">
+                            <ProfileAvatar 
+                              src={currentProctor.profile_image} 
+                              name={`${currentProctor.first_name} ${currentProctor.last_name}`} 
+                              size="sm"
+                              className="mr-3"
+                            />
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {currentProctor.first_name} {currentProctor.last_name}
+                              </div>
+                              <div className="text-gray-500">{currentProctor.employee_id}</div>
                             </div>
-                            <div className="text-gray-500">{currentProctor.employee_id}</div>
                           </div>
                         ) : (
                           <span className="text-gray-400">Not assigned</span>
@@ -298,7 +307,12 @@ export default function ProctorAssignmentPage() {
                 return (
                   <div key={proctor.employee_id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center mb-2">
-                      <UserCheck className="h-5 w-5 text-green-600 mr-2" />
+                      <ProfileAvatar 
+                        src={proctor.profile_image} 
+                        name={`${proctor.first_name} ${proctor.last_name}`} 
+                        size="sm"
+                        className="mr-3"
+                      />
                       <div>
                         <div className="font-medium text-gray-900">
                           {proctor.first_name} {proctor.last_name}

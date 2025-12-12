@@ -1,17 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
-import { Menu, X, Bell, User, LogOut } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Menu, X, Bell, LogOut } from 'lucide-react';
+import ProfileAvatar from '@/components/ProfileAvatar';
 
 export default function Header() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const userRole = session?.user?.role || 'guest';
   const userName = session?.user?.name || 'Guest User';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [profileImage, setProfileImage] = useState<string | undefined>();
+
+  // Fetch user profile image
+  useEffect(() => {
+    if (session?.user?.id && session?.user?.userType) {
+      const fetchProfileImage = async () => {
+        try {
+          const endpoint = session.user.userType === 'student' 
+            ? `/api/students/${session.user.id}`
+            : `/api/employees/${session.user.id}`;
+          
+          const response = await fetch(endpoint);
+          const data = await response.json();
+          
+          if (data.success && data.data.profile_image) {
+            setProfileImage(data.data.profile_image);
+          }
+        } catch (error) {
+          console.error('Error fetching profile image:', error);
+        }
+      };
+
+      fetchProfileImage();
+    }
+  }, [session]);
 
   const getNavigationItems = () => {
     switch (userRole) {
@@ -108,15 +133,29 @@ export default function Header() {
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                 className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 p-2 rounded-md"
               >
-                <User className="w-5 h-5" />
+                <ProfileAvatar 
+                  src={profileImage} 
+                  name={userName} 
+                  size="sm"
+                  showBorder={true}
+                />
                 <span className="hidden sm:block text-sm font-medium">{userName}</span>
               </button>
 
               {isProfileMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                   <div className="px-4 py-2 text-sm text-gray-700 border-b">
-                    <div className="font-medium">{userName}</div>
-                    <div className="text-gray-500 capitalize">{userRole}</div>
+                    <div className="flex items-center space-x-3 mb-2">
+                      <ProfileAvatar 
+                        src={profileImage} 
+                        name={userName} 
+                        size="md"
+                      />
+                      <div>
+                        <div className="font-medium">{userName}</div>
+                        <div className="text-gray-500 capitalize">{userRole}</div>
+                      </div>
+                    </div>
                   </div>
                   <Link
                     href={userRole === 'student' ? '/student/profile' : '/profile'}

@@ -17,6 +17,7 @@ import {
   BarChart3,
   User
 } from 'lucide-react';
+import ProfileAvatar from '@/components/ProfileAvatar';
 
 export default function RoleBasedNavigation() {
   const { data: session } = useSession();
@@ -139,11 +140,10 @@ export default function RoleBasedNavigation() {
             {/* User info */}
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-                  <span className="text-sm font-medium text-gray-700">
-                    {session.user.name?.charAt(0)}
-                  </span>
-                </div>
+                <ProfileAvatar 
+                  name={session.user.name} 
+                  size="sm"
+                />
               </div>
               <div className="ml-3">
                 <div className="text-sm font-medium text-gray-900">{session.user.name}</div>

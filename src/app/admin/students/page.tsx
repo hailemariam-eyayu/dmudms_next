@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { Users, Edit, Trash2, Plus, Search, UserCheck, UserX, CheckCircle, AlertCircle, Key, Upload, Download, FileText } from 'lucide-react';
+import ProfileAvatar from '@/components/ProfileAvatar';
 
 interface Student {
   _id: string;
@@ -16,6 +17,7 @@ interface Student {
   batch: string;
   status: 'active' | 'inactive';
   disability_status: string;
+  profile_image?: string;
 }
 
 export default function AdminStudentManagement() {
@@ -521,11 +523,19 @@ export default function AdminStudentManagement() {
                 {filteredStudents.map((student) => (
                   <tr key={student._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {student.first_name} {student.second_name} {student.last_name}
+                      <div className="flex items-center">
+                        <ProfileAvatar 
+                          src={student.profile_image} 
+                          name={`${student.first_name} ${student.second_name} ${student.last_name}`} 
+                          size="sm"
+                          className="mr-3"
+                        />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {student.first_name} {student.second_name} {student.last_name}
+                          </div>
+                          <div className="text-sm text-gray-500">Batch: {student.batch}</div>
                         </div>
-                        <div className="text-sm text-gray-500">Batch: {student.batch}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

@@ -13,11 +13,13 @@ import {
   MapPin,
   Phone
 } from 'lucide-react';
+import ProfileAvatar from '@/components/ProfileAvatar';
 
 export default function StudentDashboard() {
   const { data: session, status } = useSession();
   const [placement, setPlacement] = useState<any>(null);
   const [requests, setRequests] = useState<any[]>([]);
+  const [profileImage, setProfileImage] = useState<string | undefined>();
   const [materials, setMaterials] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,17 +36,19 @@ export default function StudentDashboard() {
 
   const fetchStudentData = async () => {
     try {
-      const [placementResponse, requestsResponse, materialsResponse, notificationsResponse] = await Promise.all([
+      const [placementResponse, requestsResponse, materialsResponse, notificationsResponse, profileResponse] = await Promise.all([
         fetch(`/api/students/${session?.user?.id}/placement`),
         fetch(`/api/students/${session?.user?.id}/requests`),
         fetch(`/api/students/${session?.user?.id}/materials`),
-        fetch('/api/notifications')
+        fetch('/api/notifications'),
+        fetch(`/api/students/${session?.user?.id}`)
       ]);
 
       const placementData = await placementResponse.json();
       const requestsData = await requestsResponse.json();
       const materialsData = await materialsResponse.json();
       const notificationsData = await notificationsResponse.json();
+      const profileData = await profileResponse.json();
 
       if (placementData.success) {
         setPlacement(placementData.data);
@@ -57,6 +61,9 @@ export default function StudentDashboard() {
       }
       if (notificationsData.success) {
         setNotifications(notificationsData.data);
+      }
+      if (profileData.success && profileData.data.profile_image) {
+        setProfileImage(profileData.data.profile_image);
       }
     } catch (error) {
       console.error('Error fetching student data:', error);
@@ -82,7 +89,13 @@ export default function StudentDashboard() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center">
-            <User className="h-8 w-8 text-blue-600 mr-3" />
+            <ProfileAvatar 
+              src={profileImage} 
+              name={session?.user?.name} 
+              size="xl"
+              showBorder={true}
+              className="mr-4"
+            />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Student Dashboard</h1>
               <p className="text-gray-600">Welcome back, {session?.user?.name}! Here's your dormitory information.</p>

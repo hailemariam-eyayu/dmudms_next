@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { Users, Edit, Trash2, Plus, Search, UserCheck, UserX, Key, AlertCircle } from 'lucide-react';
+import ProfileAvatar from '@/components/ProfileAvatar';
 
 interface Employee {
   _id: string;
@@ -16,6 +17,7 @@ interface Employee {
   status: 'active' | 'inactive';
   phone?: string;
   department?: string;
+  profile_image?: string;
 }
 
 export default function EmployeeManagement() {
@@ -457,8 +459,18 @@ export default function EmployeeManagement() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {employee.employee_id}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {employee.first_name} {employee.last_name}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <ProfileAvatar 
+                          src={employee.profile_image} 
+                          name={`${employee.first_name} ${employee.last_name}`} 
+                          size="sm"
+                          className="mr-3"
+                        />
+                        <div className="text-sm font-medium text-gray-900">
+                          {employee.first_name} {employee.last_name}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {employee.email}

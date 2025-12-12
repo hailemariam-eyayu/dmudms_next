@@ -13,6 +13,7 @@ import {
   Settings,
   Shield
 } from 'lucide-react';
+import ProfileAvatar from '@/components/ProfileAvatar';
 
 export default function DirectorateDashboard() {
   const { data: session, status } = useSession();
@@ -60,7 +61,12 @@ export default function DirectorateDashboard() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center">
-            <Shield className="h-8 w-8 text-purple-600 mr-3" />
+            <ProfileAvatar 
+              name={session?.user?.name} 
+              size="xl"
+              showBorder={true}
+              className="mr-4"
+            />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Directorate Dashboard</h1>
               <p className="text-gray-600">Welcome back, {session?.user?.name}! Manage students and dormitory operations.</p>

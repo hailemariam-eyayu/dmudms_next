@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { Users, UserPlus, Settings, BarChart3, Shield, Database, RefreshCw, AlertCircle } from 'lucide-react';
+import ProfileAvatar from '@/components/ProfileAvatar';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
@@ -85,7 +86,12 @@ export default function AdminDashboard() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center">
-            <Shield className="h-8 w-8 text-blue-600 mr-3" />
+            <ProfileAvatar 
+              name={session?.user?.name} 
+              size="xl"
+              showBorder={true}
+              className="mr-4"
+            />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
               <p className="text-gray-600">Welcome back, {session?.user?.name}! Manage the entire system from here.</p>
