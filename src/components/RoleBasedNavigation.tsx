@@ -14,7 +14,8 @@ import {
   Settings,
   Bell,
   Shield,
-  BarChart3
+  BarChart3,
+  User
 } from 'lucide-react';
 
 export default function RoleBasedNavigation() {
