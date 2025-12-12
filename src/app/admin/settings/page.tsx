@@ -10,7 +10,9 @@ import {
   Bell,
   Globe,
   Save,
-  RefreshCw
+  RefreshCw,
+  Mail,
+  TestTube
 } from 'lucide-react';
 
 export default function AdminSettings() {
@@ -25,6 +27,8 @@ export default function AdminSettings() {
     maxStudentsPerRoom: 6,
     academicYear: '2024/2025'
   });
+  const [emailTesting, setEmailTesting] = useState(false);
+  const [emailTestResult, setEmailTestResult] = useState<any>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -50,6 +54,32 @@ export default function AdminSettings() {
       maxStudentsPerRoom: 6,
       academicYear: '2024/2025'
     });
+  };
+
+  const testEmailService = async (testType: string) => {
+    setEmailTesting(true);
+    setEmailTestResult(null);
+    
+    try {
+      const response = await fetch('/api/admin/test-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ testType }),
+      });
+
+      const result = await response.json();
+      setEmailTestResult(result);
+    } catch (error) {
+      setEmailTestResult({
+        success: false,
+        error: 'Failed to test email service',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    } finally {
+      setEmailTesting(false);
+    }
   };
 
   if (status === 'loading') {
@@ -171,10 +201,88 @@ export default function AdminSettings() {
               <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
             </div>
             <div className="space-y-4">
+              {/* Email Service Status */}
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-medium text-blue-900">Email Service Status</h4>
+                  <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                    Mock Mode
+                  </span>
+                </div>
+                <p className="text-sm text-blue-700 mb-3">
+                  Email service is currently in mock mode. Emails are logged to console instead of being sent.
+                </p>
+                <div className="text-xs text-blue-600 mb-3">
+                  <strong>Configuration:</strong> hailemariameyayu@gmail.com via Gmail SMTP<br/>
+                  <strong>Integration:</strong> ✅ User registration emails, ✅ Password reset emails<br/>
+                  <strong>To enable:</strong> Set up Gmail App Password and update EMAIL_ENABLED=true
+                </div>
+                
+                {/* Email Testing */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <button
+                    onClick={() => testEmailService('welcome')}
+                    disabled={emailTesting}
+                    className="flex items-center px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    <TestTube className="h-3 w-3 mr-1" />
+                    Test Welcome Email
+                  </button>
+                  <button
+                    onClick={() => testEmailService('reset')}
+                    disabled={emailTesting}
+                    className="flex items-center px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                  >
+                    <TestTube className="h-3 w-3 mr-1" />
+                    Test Reset Email
+                  </button>
+                  <button
+                    onClick={() => testEmailService('general')}
+                    disabled={emailTesting}
+                    className="flex items-center px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                  >
+                    <TestTube className="h-3 w-3 mr-1" />
+                    Test Service
+                  </button>
+                </div>
+
+                {/* Test Results */}
+                {emailTestResult && (
+                  <div className={`p-3 rounded text-xs ${
+                    emailTestResult.success 
+                      ? 'bg-green-50 border border-green-200 text-green-800' 
+                      : 'bg-red-50 border border-red-200 text-red-800'
+                  }`}>
+                    <div className="font-medium mb-1">
+                      {emailTestResult.success ? '✅ Test Completed' : '❌ Test Failed'}
+                    </div>
+                    <div>{emailTestResult.message || emailTestResult.error}</div>
+                    {emailTestResult.mode && (
+                      <div className="mt-1">
+                        <strong>Mode:</strong> {emailTestResult.mode} | 
+                        <strong> From:</strong> {emailTestResult.emailFrom}
+                      </div>
+                    )}
+                    {emailTestResult.details && (
+                      <div className="mt-1 text-xs opacity-75">
+                        {emailTestResult.details}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {emailTesting && (
+                  <div className="flex items-center text-xs text-blue-600">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-2"></div>
+                    Testing email service...
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-gray-900">Email Notifications</h3>
-                  <p className="text-sm text-gray-500">Send notifications via email</p>
+                  <p className="text-sm text-gray-500">Send notifications via email (registration, password reset)</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -189,7 +297,7 @@ export default function AdminSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-gray-900">SMS Notifications</h3>
-                  <p className="text-sm text-gray-500">Send notifications via SMS</p>
+                  <p className="text-sm text-gray-500">Send notifications via SMS (not implemented)</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input

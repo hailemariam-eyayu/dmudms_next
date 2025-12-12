@@ -1,6 +1,5 @@
 // Email service for sending notifications
-// In a production environment, you would integrate with services like:
-// - SendGrid, Mailgun, AWS SES, or SMTP server
+import nodemailer from 'nodemailer';
 
 interface EmailOptions {
   to: string;
@@ -33,7 +32,7 @@ export class EmailService {
     return EmailService.instance;
   }
 
-  // Mock email sending - replace with actual email service
+  // Send email using SMTP or email service
   private async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
       if (!this.isEnabled) {
@@ -45,20 +44,31 @@ export class EmailService {
         return true;
       }
 
-      // TODO: Implement actual email sending
-      // Example with SendGrid:
-      // const msg = {
-      //   to: options.to,
-      //   from: process.env.FROM_EMAIL,
-      //   subject: options.subject,
-      //   html: options.html,
-      //   text: options.text
-      // };
-      // await sgMail.send(msg);
+      // Use nodemailer for SMTP sending
+      const transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_SERVER_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.EMAIL_SERVER_PORT || '587'),
+        secure: false, // true for 465, false for other ports
+        auth: {
+          user: process.env.EMAIL_SERVER_USER,
+          pass: process.env.EMAIL_SERVER_PASSWORD,
+        },
+      });
 
+      const mailOptions = {
+        from: `"DMUDMS" <${process.env.EMAIL_FROM || process.env.EMAIL_SERVER_USER}>`,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+      };
+
+      const info = await transporter.sendMail(mailOptions);
+      console.log('📧 Email sent successfully:', info.messageId);
       return true;
+
     } catch (error) {
-      console.error('Email sending failed:', error);
+      console.error('📧 Email sending failed:', error);
       return false;
     }
   }
