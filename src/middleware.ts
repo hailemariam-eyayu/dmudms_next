@@ -15,13 +15,13 @@ export default withAuth(
 
     // Define role-based route permissions
     const roleRoutes: Record<string, string[]> = {
-      admin: ['/admin', '/directorate', '/proctor', '/student', '/coordinator'],
-      directorate: ['/directorate', '/admin/students', '/admin/employees', '/placements', '/requests', '/emergency'],
-      proctor: ['/proctor'],
+      admin: ['/admin', '/directorate', '/proctor', '/student', '/coordinator', '/profile'],
+      directorate: ['/directorate', '/admin/students', '/admin/employees', '/placements', '/requests', '/emergency', '/profile'],
+      proctor: ['/proctor', '/profile'],
       student: ['/student'],
-      coordinator: ['/coordinator', '/admin/students', '/placements', '/requests'],
-      registrar: ['/registrar'],
-      maintainer: ['/maintainer']
+      coordinator: ['/coordinator', '/admin/students', '/placements', '/requests', '/profile'],
+      registrar: ['/registrar', '/profile'],
+      maintainer: ['/maintainer', '/profile']
     };
 
     // Check if user has access to the requested route
@@ -76,6 +76,7 @@ export const config = {
     '/dashboard/:path*',
     '/placements/:path*',
     '/requests/:path*',
-    '/emergency/:path*'
+    '/emergency/:path*',
+    '/profile/:path*'
   ]
 };

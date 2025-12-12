@@ -11,6 +11,8 @@ export interface IEmployee extends Document {
   role: 'admin' | 'directorate' | 'coordinator' | 'proctor' | 'proctor_manager' | 'registrar' | 'maintainer';
   status: 'active' | 'inactive';
   password?: string;
+  profile_image?: string;
+  profile_image_public_id?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -64,6 +66,14 @@ const EmployeeSchema: Schema = new Schema({
   password: {
     type: String,
     select: false
+  },
+  profile_image: {
+    type: String,
+    trim: true
+  },
+  profile_image_public_id: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

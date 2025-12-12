@@ -34,7 +34,8 @@ export default function RoleBasedNavigation() {
           { name: 'Employees', href: '/admin/employees', icon: UserCheck },
           { name: 'Placements', href: '/placements', icon: Building },
           { name: 'Reports', href: '/admin/reports', icon: BarChart3 },
-          { name: 'Settings', href: '/admin/settings', icon: Settings }
+          { name: 'Settings', href: '/admin/settings', icon: Settings },
+          { name: 'My Profile', href: '/profile', icon: User }
         ];
       
       case 'directorate':
@@ -45,7 +46,8 @@ export default function RoleBasedNavigation() {
           { name: 'Blocks & Rooms', href: '/directorate/blocks', icon: Building },
           { name: 'Placements', href: '/placements', icon: ClipboardList },
           { name: 'Requests', href: '/requests', icon: ClipboardList },
-          { name: 'Emergencies', href: '/emergency', icon: AlertTriangle }
+          { name: 'Emergencies', href: '/emergency', icon: AlertTriangle },
+          { name: 'My Profile', href: '/profile', icon: User }
         ];
       
       case 'coordinator':
@@ -56,7 +58,8 @@ export default function RoleBasedNavigation() {
           { name: 'View Assignments', href: '/coordinator/assignments', icon: ClipboardList },
           { name: 'Assign Proctors', href: '/coordinator/assign-proctors', icon: Settings },
           { name: 'Reports', href: '/coordinator/reports', icon: BarChart3 },
-          { name: 'All Students', href: '/admin/students', icon: Users }
+          { name: 'All Students', href: '/admin/students', icon: Users },
+          { name: 'My Profile', href: '/profile', icon: User }
         ];
 
       case 'proctor':
@@ -65,7 +68,8 @@ export default function RoleBasedNavigation() {
           { name: 'My Students', href: '/proctor/students', icon: Users },
           { name: 'Materials', href: '/proctor/materials', icon: Package },
           { name: 'Requests', href: '/proctor/requests', icon: ClipboardList },
-          { name: 'Emergencies', href: '/proctor/emergencies', icon: AlertTriangle }
+          { name: 'Emergencies', href: '/proctor/emergencies', icon: AlertTriangle },
+          { name: 'My Profile', href: '/profile', icon: User }
         ];
       
       case 'student':
@@ -74,7 +78,8 @@ export default function RoleBasedNavigation() {
           { name: 'My Room', href: '/student/placement', icon: Building },
           { name: 'Emergency Contact', href: '/student/emergency-contact', icon: AlertTriangle },
           { name: 'Requests', href: '/student/requests', icon: ClipboardList },
-          { name: 'Materials', href: '/student/materials', icon: Package }
+          { name: 'Materials', href: '/student/materials', icon: Package },
+          { name: 'My Profile', href: '/student/profile', icon: User }
         ];
       
       default:

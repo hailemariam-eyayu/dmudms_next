@@ -3,26 +3,26 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import { User, Mail, Phone, Building, Save, AlertCircle, Shield } from 'lucide-react';
+import { User, Mail, Phone, Calendar, MapPin, Save, AlertCircle } from 'lucide-react';
 import ProfileImageUpload from '@/components/ProfileImageUpload';
 
-interface EmployeeProfile {
-  employee_id: string;
+interface StudentProfile {
+  student_id: string;
   first_name: string;
+  second_name?: string;
   last_name: string;
   email: string;
   gender: string;
-  phone?: string;
-  department?: string;
-  role: string;
+  batch: string;
+  disability_status: string;
   status: string;
   profile_image?: string;
   profile_image_public_id?: string;
 }
 
-export default function EmployeeProfilePage() {
+export default function StudentProfilePage() {
   const { data: session, status } = useSession();
-  const [profile, setProfile] = useState<EmployeeProfile | null>(null);
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -30,15 +30,17 @@ export default function EmployeeProfilePage() {
 
   const [formData, setFormData] = useState({
     first_name: '',
+    second_name: '',
     last_name: '',
     email: '',
-    phone: '',
-    department: ''
+    gender: 'male',
+    batch: '',
+    disability_status: 'none'
   });
 
   useEffect(() => {
     if (status === 'loading') return;
-    if (!session || session.user.userType !== 'employee') {
+    if (!session || session.user.userType !== 'student') {
       redirect('/auth/signin');
       return;
     }
@@ -48,17 +50,19 @@ export default function EmployeeProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch(`/api/employees/${session?.user.id}`);
+      const response = await fetch(`/api/students/${session?.user.id}`);
       const data = await response.json();
       
       if (data.success) {
         setProfile(data.data);
         setFormData({
           first_name: data.data.first_name || '',
+          second_name: data.data.second_name || '',
           last_name: data.data.last_name || '',
           email: data.data.email || '',
-          phone: data.data.phone || '',
-          department: data.data.department || ''
+          gender: data.data.gender || 'male',
+          batch: data.data.batch || '',
+          disability_status: data.data.disability_status || 'none'
         });
       }
     } catch (error) {
@@ -75,7 +79,7 @@ export default function EmployeeProfilePage() {
     setMessage(null);
 
     try {
-      const response = await fetch(`/api/employees/${session?.user.id}`, {
+      const response = await fetch(`/api/students/${session?.user.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -113,27 +117,16 @@ export default function EmployeeProfilePage() {
     if (profile) {
       setFormData({
         first_name: profile.first_name || '',
+        second_name: profile.second_name || '',
         last_name: profile.last_name || '',
         email: profile.email || '',
-        phone: profile.phone || '',
-        department: profile.department || ''
+        gender: profile.gender || 'male',
+        batch: profile.batch || '',
+        disability_status: profile.disability_status || 'none'
       });
     }
     setEditing(false);
     setMessage(null);
-  };
-
-  const getRoleColor = (role: string) => {
-    const colors: Record<string, string> = {
-      admin: 'text-purple-600 bg-purple-100',
-      directorate: 'text-blue-600 bg-blue-100',
-      coordinator: 'text-green-600 bg-green-100',
-      proctor: 'text-orange-600 bg-orange-100',
-      proctor_manager: 'text-red-600 bg-red-100',
-      registrar: 'text-indigo-600 bg-indigo-100',
-      maintainer: 'text-gray-600 bg-gray-100'
-    };
-    return colors[role] || 'text-gray-600 bg-gray-100';
   };
 
   if (status === 'loading' || loading) {
@@ -204,14 +197,6 @@ export default function EmployeeProfilePage() {
                 size="lg"
                 className="w-full"
               />
-              
-              {/* Role Badge */}
-              <div className="mt-6 text-center">
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(profile.role)}`}>
-                  <Shield className="h-4 w-4 mr-1" />
-                  {profile.role.replace('_', ' ').toUpperCase()}
-                </span>
-              </div>
             </div>
           </div>
 
@@ -236,6 +221,18 @@ export default function EmployeeProfilePage() {
                           onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Second Name
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.second_name}
+                          onChange={(e) => setFormData({ ...formData, second_name: e.target.value })}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
 
@@ -267,27 +264,46 @@ export default function EmployeeProfilePage() {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Phone
+                          Gender
+                        </label>
+                        <select
+                          value={formData.gender}
+                          onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Batch
                         </label>
                         <input
-                          type="tel"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          type="text"
+                          value={formData.batch}
+                          onChange={(e) => setFormData({ ...formData, batch: e.target.value })}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="+251-XX-XXX-XXXX"
+                          required
                         />
                       </div>
 
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Department
+                          Disability Status
                         </label>
-                        <input
-                          type="text"
-                          value={formData.department}
-                          onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                        <select
+                          value={formData.disability_status}
+                          onChange={(e) => setFormData({ ...formData, disability_status: e.target.value })}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
+                        >
+                          <option value="none">None</option>
+                          <option value="physical">Physical</option>
+                          <option value="visual">Visual</option>
+                          <option value="hearing">Hearing</option>
+                          <option value="other">Other</option>
+                        </select>
                       </div>
                     </div>
 
@@ -315,8 +331,8 @@ export default function EmployeeProfilePage() {
                       <div className="flex items-center">
                         <User className="h-5 w-5 text-gray-400 mr-3" />
                         <div>
-                          <div className="text-sm text-gray-500">Employee ID</div>
-                          <div className="font-medium text-gray-900">{profile.employee_id}</div>
+                          <div className="text-sm text-gray-500">Student ID</div>
+                          <div className="font-medium text-gray-900">{profile.student_id}</div>
                         </div>
                       </div>
 
@@ -333,24 +349,16 @@ export default function EmployeeProfilePage() {
                         <div>
                           <div className="text-sm text-gray-500">Full Name</div>
                           <div className="font-medium text-gray-900">
-                            {profile.first_name} {profile.last_name}
+                            {profile.first_name} {profile.second_name} {profile.last_name}
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center">
-                        <Phone className="h-5 w-5 text-gray-400 mr-3" />
+                        <Calendar className="h-5 w-5 text-gray-400 mr-3" />
                         <div>
-                          <div className="text-sm text-gray-500">Phone</div>
-                          <div className="font-medium text-gray-900">{profile.phone || 'Not provided'}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center">
-                        <Building className="h-5 w-5 text-gray-400 mr-3" />
-                        <div>
-                          <div className="text-sm text-gray-500">Department</div>
-                          <div className="font-medium text-gray-900">{profile.department || 'Not specified'}</div>
+                          <div className="text-sm text-gray-500">Batch</div>
+                          <div className="font-medium text-gray-900">{profile.batch}</div>
                         </div>
                       </div>
 
@@ -362,8 +370,8 @@ export default function EmployeeProfilePage() {
                         </div>
                       </div>
 
-                      <div className="md:col-span-2 flex items-center">
-                        <Shield className="h-5 w-5 text-gray-400 mr-3" />
+                      <div className="flex items-center">
+                        <MapPin className="h-5 w-5 text-gray-400 mr-3" />
                         <div>
                           <div className="text-sm text-gray-500">Status</div>
                           <div className={`font-medium capitalize ${
@@ -373,6 +381,18 @@ export default function EmployeeProfilePage() {
                           </div>
                         </div>
                       </div>
+
+                      {profile.disability_status !== 'none' && (
+                        <div className="md:col-span-2 flex items-center">
+                          <AlertCircle className="h-5 w-5 text-orange-400 mr-3" />
+                          <div>
+                            <div className="text-sm text-gray-500">Disability Status</div>
+                            <div className="font-medium text-orange-600 capitalize">
+                              {profile.disability_status}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

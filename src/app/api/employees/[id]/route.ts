@@ -15,17 +15,26 @@ export async function GET(
     }
 
     const { id } = await params;
-    const employee = await mongoDataStore.getEmployeeById(id);
+    
+    // Allow users to view their own profile or admins to view any profile
+    if (session.user.id !== id && !['admin', 'directorate'].includes(session.user.role)) {
+      return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    const employee = await mongoDataStore.getEmployee(id);
     
     if (!employee) {
       return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404 });
     }
 
+    // Remove password from response
+    const { password, ...employeeData } = employee;
+
     return NextResponse.json({
       success: true,
-      data: employee
+      data: employeeData
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching employee:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
@@ -41,24 +50,37 @@ export async function PUT(
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || session.user.role !== 'admin') {
+    if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const updateData = await request.json();
     const { id } = await params;
     
-    // Remove password from update data to prevent accidental password clearing
-    // Password should only be updated through dedicated password reset endpoints
-    const { password, ...safeUpdateData } = updateData;
+    // Allow users to update their own profile or admins to update any profile
+    if (session.user.id !== id && !['admin', 'directorate'].includes(session.user.role)) {
+      return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    const updates = await request.json();
     
-    const result = await mongoDataStore.updateEmployee(id, safeUpdateData);
+    // Remove sensitive fields that shouldn't be updated via profile
+    const { password, employee_id, role, status, ...allowedUpdates } = updates;
+
+    const updatedEmployee = await mongoDataStore.updateEmployee(id, allowedUpdates);
     
+    if (!updatedEmployee) {
+      return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404 });
+    }
+
+    // Remove password from response
+    const { password: _, ...employeeData } = updatedEmployee;
+
     return NextResponse.json({
       success: true,
-      data: result
+      data: employeeData,
+      message: 'Employee updated successfully'
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating employee:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
@@ -74,18 +96,28 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || session.user.role !== 'admin') {
+    if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Only admins can delete employees
+    if (session.user.role !== 'admin') {
+      return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
+    }
+
     const { id } = await params;
-    await mongoDataStore.deleteEmployee(id);
     
+    const deleted = await mongoDataStore.deleteEmployee(id);
+    
+    if (!deleted) {
+      return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404 });
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Employee deleted successfully'
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting employee:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

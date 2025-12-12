@@ -119,7 +119,7 @@ export default function Header() {
                     <div className="text-gray-500 capitalize">{userRole}</div>
                   </div>
                   <Link
-                    href="/profile"
+                    href={userRole === 'student' ? '/student/profile' : '/profile'}
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Profile Settings

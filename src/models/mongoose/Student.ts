@@ -11,6 +11,8 @@ export interface IStudent extends Document {
   disability_status: 'none' | 'physical' | 'visual' | 'hearing' | 'other';
   status: 'active' | 'inactive' | 'graduated' | 'suspended';
   password?: string;
+  profile_image?: string;
+  profile_image_public_id?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -64,6 +66,14 @@ const StudentSchema: Schema = new Schema({
   password: {
     type: String,
     select: false // Don't include password in queries by default
+  },
+  profile_image: {
+    type: String,
+    trim: true
+  },
+  profile_image_public_id: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
