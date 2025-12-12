@@ -60,36 +60,106 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get all emergencies and filter for assigned students only
+    // Get all emergencies and filter for relevant ones
     const allEmergencies = await mongoDataStore.getEmergencies();
-    const proctorEmergencies = allEmergencies.filter(emergency =>
-      assignedStudentIds.includes(emergency.student_id)
-    );
+    
+    let proctorEmergencies;
+    
+    if (session.user.role === 'coordinator') {
+      // Coordinators can see all emergencies or filter by specific proctor
+      if (searchParams.get('proctorId')) {
+        // Filter by specific proctor's blocks
+        proctorEmergencies = allEmergencies.filter(emergency => {
+          // Include student emergencies from assigned blocks
+          if (emergency.student_id && assignedStudentIds.includes(emergency.student_id)) {
+            return true;
+          }
+          // Include staff emergencies reported by this proctor
+          if (emergency.reporter_type === 'staff' && emergency.reported_by === proctorId) {
+            return true;
+          }
+          return false;
+        });
+      } else {
+        // Show all emergencies for coordinators
+        proctorEmergencies = allEmergencies;
+      }
+    } else {
+      // Proctors see emergencies from their assigned students + their own reports
+      proctorEmergencies = allEmergencies.filter(emergency => {
+        // Include student emergencies from assigned blocks
+        if (emergency.student_id && assignedStudentIds.includes(emergency.student_id)) {
+          return true;
+        }
+        // Include staff emergencies reported by this proctor
+        if (emergency.reporter_type === 'staff' && emergency.reported_by === proctorId) {
+          return true;
+        }
+        return false;
+      });
+    }
 
     // Get student details for the emergencies
     const students = await mongoDataStore.getStudents();
-    const emergenciesWithStudentInfo = proctorEmergencies.map(emergency => {
-      const student = students.find(s => s.student_id === emergency.student_id);
-      const placement = assignedPlacements.find(p => p.student_id === emergency.student_id);
-      
+    const employees = await mongoDataStore.getEmployees();
+    
+    const emergenciesWithInfo = proctorEmergencies.map(emergency => {
+      let studentInfo = null;
+      let reporterInfo = null;
+      let locationInfo = null;
+
+      // Get student info if emergency is linked to a student
+      if (emergency.student_id) {
+        const student = students.find(s => s.student_id === emergency.student_id);
+        const placement = assignedPlacements.find(p => p.student_id === emergency.student_id);
+        
+        if (student) {
+          studentInfo = {
+            student_name: `${student.first_name} ${student.last_name}`,
+            student_email: student.email,
+            block: placement?.block,
+            room: placement?.room,
+            block_name: proctorBlocks.find(b => b.block_id === placement?.block)?.name
+          };
+        }
+      }
+
+      // Get reporter info
+      if (emergency.reporter_type === 'staff') {
+        const reporter = employees.find(e => e.employee_id === emergency.reported_by);
+        if (reporter) {
+          reporterInfo = {
+            reporter_name: `${reporter.first_name} ${reporter.last_name}`,
+            reporter_role: emergency.reporter_role || reporter.role
+          };
+        }
+      } else if (emergency.reporter_type === 'student') {
+        const reporter = students.find(s => s.student_id === emergency.reported_by);
+        if (reporter) {
+          reporterInfo = {
+            reporter_name: `${reporter.first_name} ${reporter.last_name}`,
+            reporter_role: 'student'
+          };
+        }
+      }
+
       return {
         ...emergency,
-        student_name: student ? `${student.first_name} ${student.last_name}` : 'Unknown Student',
-        student_email: student?.email,
-        block: placement?.block,
-        room: placement?.room,
-        block_name: proctorBlocks.find(b => b.block_id === placement?.block)?.name
+        ...studentInfo,
+        ...reporterInfo,
+        location: emergency.location || 'Not specified',
+        severity: emergency.severity || 'medium'
       };
     });
 
     // Sort by report date (newest first)
-    emergenciesWithStudentInfo.sort((a, b) => 
+    emergenciesWithInfo.sort((a, b) => 
       new Date(b.reported_date).getTime() - new Date(a.reported_date).getTime()
     );
 
     return NextResponse.json({
       success: true,
-      data: emergenciesWithStudentInfo,
+      data: emergenciesWithInfo,
       blocks: proctorBlocks.map(block => ({
         block_id: block.block_id,
         name: block.name

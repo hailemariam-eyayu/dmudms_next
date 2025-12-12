@@ -179,10 +179,30 @@ export default function ProctorEmergenciesPage() {
                       </div>
                       <h3 className="text-lg font-medium text-gray-900 mb-2">{emergency.type}</h3>
                       <p className="text-gray-600 mb-3">{emergency.description}</p>
+                      
+                      {/* Reporter and Student Info */}
+                      {(emergency.reporter_name || emergency.student_name) && (
+                        <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+                          {emergency.reporter_name && (
+                            <div className="text-sm text-gray-700">
+                              <span className="font-medium">Reported by:</span> {emergency.reporter_name} ({emergency.reporter_role})
+                            </div>
+                          )}
+                          {emergency.student_name && emergency.student_name !== emergency.reporter_name && (
+                            <div className="text-sm text-gray-700">
+                              <span className="font-medium">Student:</span> {emergency.student_name}
+                              {emergency.block && emergency.room && (
+                                <span className="text-gray-500"> - {emergency.block_name || emergency.block}, Room {emergency.room}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex items-center space-x-4 text-sm text-gray-500">
                         <div className="flex items-center">
                           <MapPin className="h-4 w-4 mr-1" />
-                          {emergency.location}
+                          {emergency.location || 'Not specified'}
                         </div>
                         <div className="flex items-center">
                           <Clock className="h-4 w-4 mr-1" />

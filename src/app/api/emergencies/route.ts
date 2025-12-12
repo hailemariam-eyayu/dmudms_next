@@ -61,46 +61,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Add reporter information and defaults
-    // Use provided student_id or fallback to session user id
-    let reporterStudentId = emergencyData.student_id;
-    if (!reporterStudentId) {
-      // If no student_id provided, use session user id
-      // For students, session.user.id should be their student_id
-      // For staff reporting on behalf of students, they should provide student_id
-      reporterStudentId = session.user.id;
-    }
-    
-    console.log('👤 Reporter student ID:', reporterStudentId);
-    
-    // Validate that the student exists (optional validation)
-    try {
-      const student = await mongoDataStore.getStudent(reporterStudentId);
-      if (!student) {
-        console.log('⚠️ Student not found, but proceeding with emergency creation');
-      } else {
-        console.log('✅ Student found:', student.first_name, student.last_name);
-      }
-    } catch (error) {
-      console.log('⚠️ Could not validate student, but proceeding with emergency creation');
-    }
-    
-    const emergencyWithReporter = {
-      student_id: reporterStudentId,
+    // Create emergency data with all possible fields
+    const emergencyWithReporter: any = {
       type: emergencyData.type,
       description: emergencyData.description.trim(),
       status: 'reported',
       reported_date: new Date(),
-      // Optional emergency contact fields - only include if provided
-      ...(emergencyData.father_name && { father_name: emergencyData.father_name.trim() }),
-      ...(emergencyData.grand_father && { grand_father: emergencyData.grand_father.trim() }),
-      ...(emergencyData.grand_grand_father && { grand_grand_father: emergencyData.grand_grand_father.trim() }),
-      ...(emergencyData.phone && { phone: emergencyData.phone.trim() }),
-      ...(emergencyData.region && { region: emergencyData.region.trim() }),
-      ...(emergencyData.woreda && { woreda: emergencyData.woreda.trim() }),
-      ...(emergencyData.kebele && { kebele: emergencyData.kebele.trim() }),
-      ...(emergencyData.mother_name && { mother_name: emergencyData.mother_name.trim() })
     };
+
+    // Add reporter information based on user role
+    if (session.user.role === 'student') {
+      // Student reporting their own emergency
+      emergencyWithReporter.student_id = session.user.id;
+      emergencyWithReporter.reported_by = session.user.id;
+      emergencyWithReporter.reporter_type = 'student';
+    } else {
+      // Staff member reporting emergency (proctor, coordinator, etc.)
+      emergencyWithReporter.student_id = emergencyData.student_id || null;
+      emergencyWithReporter.reported_by = session.user.id;
+      emergencyWithReporter.reporter_type = 'staff';
+      emergencyWithReporter.reporter_role = session.user.role;
+      emergencyWithReporter.location = emergencyData.location || 'Not specified';
+      emergencyWithReporter.severity = emergencyData.severity || 'medium';
+    }
+
+    // Add optional emergency contact fields if provided
+    if (emergencyData.father_name) emergencyWithReporter.father_name = emergencyData.father_name.trim();
+    if (emergencyData.grand_father) emergencyWithReporter.grand_father = emergencyData.grand_father.trim();
+    if (emergencyData.grand_grand_father) emergencyWithReporter.grand_grand_father = emergencyData.grand_grand_father.trim();
+    if (emergencyData.phone) emergencyWithReporter.phone = emergencyData.phone.trim();
+    if (emergencyData.region) emergencyWithReporter.region = emergencyData.region.trim();
+    if (emergencyData.woreda) emergencyWithReporter.woreda = emergencyData.woreda.trim();
+    if (emergencyData.kebele) emergencyWithReporter.kebele = emergencyData.kebele.trim();
+    if (emergencyData.mother_name) emergencyWithReporter.mother_name = emergencyData.mother_name.trim();
+    
+    console.log('🚨 Creating emergency:', JSON.stringify(emergencyWithReporter, null, 2));
 
     console.log('🔄 Processed emergency data:', JSON.stringify(emergencyWithReporter, null, 2));
 
