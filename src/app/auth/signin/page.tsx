@@ -31,7 +31,7 @@ export default function SignIn() {
         student: '/student',
         proctormanager: '/proctormanager'
       };
-      router.push(roleRedirects[session.user.role as keyof typeof roleRedirects] || '/dashboard/default');
+      router.replace(roleRedirects[session.user.role as keyof typeof roleRedirects] || '/dashboard/default');
     }
   }, [session, status, router]);
 
@@ -74,10 +74,10 @@ export default function SignIn() {
       if (result?.error) {
         setError('Invalid credentials. Please check your ID and password.');
       } else {
-        // Get the session to determine redirect
+        // Success! The AuthRedirect component will handle the redirect
+        // But we can also do an immediate redirect here for faster response
         const session = await getSession();
         if (session?.user?.role) {
-          // Redirect directly to role-specific dashboard
           const roleRedirects = {
             admin: '/admin',
             directorate: '/directorate',
@@ -88,7 +88,10 @@ export default function SignIn() {
             student: '/student',
             proctormanager: '/proctormanager'
           };
-          router.push(roleRedirects[session.user.role as keyof typeof roleRedirects] || '/dashboard/default');
+          const targetDashboard = roleRedirects[session.user.role as keyof typeof roleRedirects] || '/dashboard/default';
+          
+          // Immediate redirect using replace for faster navigation
+          router.replace(targetDashboard);
         }
       }
     } catch (error) {

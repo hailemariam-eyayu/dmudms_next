@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import AuthProvider from "@/components/providers/AuthProvider";
+import AuthRedirect from "@/components/AuthRedirect";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +32,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
+          <AuthRedirect />
           <div className="min-h-screen flex flex-col">
             <Header />
             <main className="flex-1">
