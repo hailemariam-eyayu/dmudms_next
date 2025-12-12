@@ -1,0 +1,3 @@
+employee_id,first_name,last_name,email,gender,role,phone,department
+TEST002,Test,Employee2,lovewithme2932@gmail.com,male,proctor,+251-911-123456,IT Testing
+TEST003,Demo,User,lovewithme2932@gmail.com,female,proctor,+251-911-234567,IT Testing

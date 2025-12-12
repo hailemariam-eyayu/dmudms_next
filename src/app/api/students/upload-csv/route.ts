@@ -170,6 +170,7 @@ export async function POST(request: NextRequest) {
         try {
           await emailService.sendWelcomeEmail({
             name: `${studentData.first_name} ${studentData.second_name} ${studentData.last_name}`.trim(),
+            email: studentData.email,
             userId: studentData.student_id,
             password: generatedPassword,
             loginUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`,

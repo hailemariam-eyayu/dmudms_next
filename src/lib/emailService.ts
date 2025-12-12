@@ -10,6 +10,7 @@ interface EmailOptions {
 
 interface PasswordEmailData {
   name: string;
+  email: string;
   userId: string;
   password: string;
   loginUrl: string;
@@ -153,7 +154,7 @@ If you have any questions, please contact the IT support team.
     `;
 
     return await this.sendEmail({
-      to: data.name.includes('@') ? data.name : `${data.userId}@dmu.edu`, // Use email if provided, otherwise construct
+      to: data.email, // Use the actual email address provided
       subject,
       html,
       text
@@ -241,7 +242,7 @@ If you did not request this reset, contact the administrator immediately.
     `;
 
     return await this.sendEmail({
-      to: data.name.includes('@') ? data.name : `${data.userId}@dmu.edu`,
+      to: data.email, // Use the actual email address provided
       subject,
       html,
       text

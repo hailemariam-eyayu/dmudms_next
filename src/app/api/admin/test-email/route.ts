@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
       case 'welcome':
         result = await emailService.sendWelcomeEmail({
           name: 'Test User',
+          email: 'test@example.com',
           userId: 'TEST001',
           password: 'test123',
           loginUrl: process.env.NEXTAUTH_URL || 'http://localhost:3000',
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
       case 'reset':
         result = await emailService.sendPasswordResetEmail({
           name: 'Test User',
+          email: 'test@example.com',
           userId: 'TEST001',
           password: 'newpass123',
           loginUrl: process.env.NEXTAUTH_URL || 'http://localhost:3000',

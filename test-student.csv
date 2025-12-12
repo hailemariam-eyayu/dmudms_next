@@ -1,0 +1,3 @@
+student_id,first_name,second_name,last_name,email,gender,batch,disability_status
+STU002,Test,Middle,Student2,lovewithme2932@gmail.com,male,2024,none
+STU003,Demo,Test,Student3,lovewithme2932@gmail.com,female,2024,none

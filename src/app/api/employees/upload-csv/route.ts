@@ -171,6 +171,7 @@ export async function POST(request: NextRequest) {
         try {
           await emailService.sendWelcomeEmail({
             name: `${employeeData.first_name} ${employeeData.last_name}`,
+            email: employeeData.email,
             userId: employeeData.employee_id,
             password: generatedPassword,
             loginUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`,

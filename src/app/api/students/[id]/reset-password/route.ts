@@ -36,6 +36,7 @@ export async function POST(
       try {
         await emailService.sendPasswordResetEmail({
           name: `${student.first_name} ${student.second_name} ${student.last_name}`.trim(),
+          email: student.email,
           userId: student.student_id,
           password: newPassword,
           loginUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`,
