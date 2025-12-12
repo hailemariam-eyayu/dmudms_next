@@ -43,31 +43,12 @@ class MongoDataStore {
     try {
       // Check if data already exists
       const studentCount = await Student.countDocuments();
-      const shouldReseed = !this.initialized || studentCount === 0;
+      const employeeCount = await Employee.countDocuments();
       
-      if (studentCount > 0 && this.initialized) {
-        return; // Data already exists and we're not forcing a reseed
-      }
-
-      if (studentCount > 0) {
-        console.log('Clearing existing data for fresh seed...');
-        // Clear existing data
-        await Student.deleteMany({});
-        await Employee.deleteMany({});
-        await Block.deleteMany({});
-        await Room.deleteMany({});
-        await StudentPlacement.deleteMany({});
-        await Request.deleteMany({});
-        await Emergency.deleteMany({});
-        await Notification.deleteMany({});
-        
-        // Also clear emergency contacts if the model exists
-        try {
-          const EmergencyContact = (await import('@/models/mongoose/EmergencyContact')).default;
-          await EmergencyContact.deleteMany({});
-        } catch (error) {
-          console.log('EmergencyContact model not available, skipping...');
-        }
+      // PRODUCTION FIX: Only seed if database is completely empty
+      if (studentCount > 0 || employeeCount > 0) {
+        console.log(`Database already has data (${studentCount} students, ${employeeCount} employees) - skipping seed`);
+        return; // Data already exists, don't reseed
       }
 
       console.log('Seeding database with sample data...');
