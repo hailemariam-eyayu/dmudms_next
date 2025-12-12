@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import { Users, Edit, Trash2, Plus, Search, UserCheck, UserX, Key, AlertCircle } from 'lucide-react';
+import { Users, Edit, Trash2, Plus, Search, UserCheck, UserX, Key, AlertCircle, Upload, FileText, X } from 'lucide-react';
 import ProfileAvatar from '@/components/ProfileAvatar';
 
 interface Employee {
@@ -29,6 +29,9 @@ export default function EmployeeManagement() {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [resetPasswordResult, setResetPasswordResult] = useState<{ employeeId: string, newPassword: string } | null>(null);
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResults, setUploadResults] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     employee_id: '',
@@ -182,6 +185,47 @@ export default function EmployeeManagement() {
     setShowCreateForm(false);
   };
 
+  const handleCSVUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const fileInput = form.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = fileInput.files?.[0];
+
+    if (!file) {
+      setMessage({ type: 'error', text: 'Please select a CSV file' });
+      return;
+    }
+
+    setUploading(true);
+    setMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/employees/upload-csv', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setUploadResults(data.data);
+        setMessage({ type: 'success', text: data.message });
+        fetchEmployees(); // Refresh the employee list
+        setShowUploadForm(false);
+      } else {
+        setMessage({ type: 'error', text: data.error });
+      }
+    } catch (error) {
+      console.error('Error uploading CSV:', error);
+      setMessage({ type: 'error', text: 'Failed to upload CSV file' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const filteredEmployees = employees.filter(emp =>
     emp.employee_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     emp.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -213,13 +257,22 @@ export default function EmployeeManagement() {
                 <p className="text-gray-600">Manage system users and their roles</p>
               </div>
             </div>
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Add Employee
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Add Employee
+              </button>
+              <button
+                onClick={() => setShowUploadForm(!showUploadForm)}
+                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload CSV
+              </button>
+            </div>
           </div>
         </div>
 
@@ -277,6 +330,111 @@ export default function EmployeeManagement() {
             />
           </div>
         </div>
+
+        {/* CSV Upload Form */}
+        {showUploadForm && (
+          <div className="mb-6 bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold flex items-center">
+                <FileText className="h-5 w-5 mr-2" />
+                Upload Employees CSV
+              </h2>
+              <button
+                onClick={() => setShowUploadForm(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCSVUpload} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select CSV File
+                </label>
+                <input
+                  type="file"
+                  accept=".csv"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  CSV should contain: employee_id, first_name, last_name, email, gender, role, phone, department
+                </p>
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  type="submit"
+                  disabled={uploading}
+                  className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                >
+                  {uploading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload CSV
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowUploadForm(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Upload Results */}
+        {uploadResults && (
+          <div className="mb-6 bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-4">Upload Results</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">{uploadResults.total}</div>
+                <div className="text-sm text-blue-800">Total Records</div>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">{uploadResults.created}</div>
+                <div className="text-sm text-green-800">Created</div>
+              </div>
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-yellow-600">{uploadResults.skipped}</div>
+                <div className="text-sm text-yellow-800">Skipped</div>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">{uploadResults.emailsSent || 0}</div>
+                <div className="text-sm text-purple-800">Emails Sent</div>
+              </div>
+            </div>
+            
+            {uploadResults.errors && uploadResults.errors.length > 0 && (
+              <div className="mt-4">
+                <h4 className="font-medium text-red-800 mb-2">Errors:</h4>
+                <div className="bg-red-50 p-3 rounded max-h-40 overflow-y-auto">
+                  {uploadResults.errors.map((error: string, index: number) => (
+                    <div key={index} className="text-sm text-red-700 mb-1">{error}</div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <button
+              onClick={() => setUploadResults(null)}
+              className="mt-4 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Create/Edit Form */}
         {showCreateForm && (

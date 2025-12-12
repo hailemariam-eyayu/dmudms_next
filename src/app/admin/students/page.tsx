@@ -422,6 +422,7 @@ export default function AdminStudentManagement() {
                   <p><span className="font-medium">Total Records:</span> {uploadResults.total}</p>
                   <p><span className="font-medium text-green-600">Created:</span> {uploadResults.created}</p>
                   <p><span className="font-medium text-yellow-600">Skipped:</span> {uploadResults.skipped}</p>
+                  <p><span className="font-medium text-purple-600">Emails Sent:</span> {uploadResults.emailsSent || 0}</p>
                   {uploadResults.errors.length > 0 && (
                     <div className="mt-2">
                       <p className="font-medium text-red-600">Errors:</p>

@@ -1,0 +1,6 @@
+employee_id,first_name,last_name,email,gender,role,phone,department
+EMP011,Abebe,Tadesse,abebe.tadesse@dmu.edu.et,male,proctor,+251-911-123456,Student Affairs
+EMP012,Almaz,Bekele,almaz.bekele@dmu.edu.et,female,proctor,+251-911-234567,Student Affairs
+EMP013,Dawit,Haile,dawit.haile@dmu.edu.et,male,coordinator,+251-911-345678,Dormitory Management
+EMP014,Hanan,Mohammed,hanan.mohammed@dmu.edu.et,female,proctormanager,+251-911-456789,Student Affairs
+EMP015,Kebede,Girma,kebede.girma@dmu.edu.et,male,proctor,+251-911-567890,Student Affairs

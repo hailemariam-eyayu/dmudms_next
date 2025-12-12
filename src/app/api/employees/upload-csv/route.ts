@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || !['admin', 'directorate', 'registrar'].includes(session.user.role)) {
+    if (!session || !['admin', 'directorate'].includes(session.user.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -75,14 +75,14 @@ export async function POST(request: NextRequest) {
 
     // Validate CSV headers
     const expectedHeaders = [
-      'student_id',
+      'employee_id',
       'first_name',
-      'second_name',
       'last_name',
       'email',
       'gender',
-      'batch',
-      'disability_status'
+      'role',
+      'phone',
+      'department'
     ];
 
     const actualHeaders = Object.keys(records[0]);
@@ -112,16 +112,16 @@ export async function POST(request: NextRequest) {
         // Validate required fields
         for (const field of expectedHeaders) {
           if (!record[field] || record[field].trim() === '') {
-            results.errors.push(`Row with student_id ${record.student_id || 'unknown'}: Missing ${field}`);
+            results.errors.push(`Row with employee_id ${record.employee_id || 'unknown'}: Missing ${field}`);
             results.skipped++;
             continue;
           }
         }
 
-        // Check if student already exists
-        const existingStudent = await mongoDataStore.getStudent(record.student_id);
-        if (existingStudent) {
-          results.errors.push(`Student ID ${record.student_id} already exists`);
+        // Check if employee already exists
+        const existingEmployee = await mongoDataStore.getEmployee(record.employee_id);
+        if (existingEmployee) {
+          results.errors.push(`Employee ID ${record.employee_id} already exists`);
           results.skipped++;
           continue;
         }
@@ -129,61 +129,62 @@ export async function POST(request: NextRequest) {
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(record.email)) {
-          results.errors.push(`Row with student_id ${record.student_id}: Invalid email format`);
+          results.errors.push(`Row with employee_id ${record.employee_id}: Invalid email format`);
           results.skipped++;
           continue;
         }
 
         // Validate gender
         if (!['male', 'female'].includes(record.gender.toLowerCase())) {
-          results.errors.push(`Row with student_id ${record.student_id}: Gender must be 'male' or 'female'`);
+          results.errors.push(`Row with employee_id ${record.employee_id}: Gender must be 'male' or 'female'`);
           results.skipped++;
           continue;
         }
 
-        // Validate batch (should be a number)
-        if (isNaN(parseInt(record.batch))) {
-          results.errors.push(`Row with student_id ${record.student_id}: Batch must be a number`);
+        // Validate role
+        const validRoles = ['admin', 'directorate', 'coordinator', 'proctor', 'proctormanager'];
+        if (!validRoles.includes(record.role.toLowerCase())) {
+          results.errors.push(`Row with employee_id ${record.employee_id}: Role must be one of: ${validRoles.join(', ')}`);
           results.skipped++;
           continue;
         }
 
-        // Create student data with auto-generated password
+        // Create employee data with auto-generated password
         const generatedPassword = `${record.last_name.trim()}1234abcd#`;
-        const studentData = {
-          student_id: record.student_id.trim(),
+        const employeeData = {
+          employee_id: record.employee_id.trim(),
           first_name: record.first_name.trim(),
-          second_name: record.second_name.trim(),
           last_name: record.last_name.trim(),
           email: record.email.trim().toLowerCase(),
           gender: record.gender.toLowerCase(),
-          batch: record.batch.trim(),
-          disability_status: record.disability_status.trim().toLowerCase() === 'yes' ? 'physical' : 'none',
+          role: record.role.toLowerCase(),
+          phone: record.phone.trim(),
+          department: record.department.trim(),
           status: 'active',
           password: generatedPassword
         };
 
-        await mongoDataStore.createStudent(studentData);
+        await mongoDataStore.createEmployee(employeeData);
         results.created++;
 
         // Send welcome email with credentials
         try {
           await emailService.sendWelcomeEmail({
-            name: `${studentData.first_name} ${studentData.second_name} ${studentData.last_name}`.trim(),
-            userId: studentData.student_id,
+            name: `${employeeData.first_name} ${employeeData.last_name}`,
+            userId: employeeData.employee_id,
             password: generatedPassword,
             loginUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`,
-            userType: 'student'
+            userType: 'employee'
           });
           results.emailsSent++;
         } catch (emailError) {
-          console.error(`Failed to send welcome email to ${studentData.email}:`, emailError);
-          // Don't fail the student creation if email fails
+          console.error(`Failed to send welcome email to ${employeeData.email}:`, emailError);
+          // Don't fail the employee creation if email fails
         }
 
       } catch (error: any) {
-        console.error('Error creating student:', error);
-        results.errors.push(`Row with student_id ${record.student_id || 'unknown'}: ${error.message}`);
+        console.error('Error creating employee:', error);
+        results.errors.push(`Row with employee_id ${record.employee_id || 'unknown'}: ${error.message}`);
         results.skipped++;
       }
     }
@@ -191,7 +192,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: results,
-      message: `Upload completed. ${results.created} students created, ${results.skipped} skipped, ${results.emailsSent} welcome emails sent.`
+      message: `Upload completed. ${results.created} employees created, ${results.skipped} skipped, ${results.emailsSent} welcome emails sent.`
     });
 
   } catch (error) {
