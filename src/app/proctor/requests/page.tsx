@@ -23,12 +23,16 @@ export default function ProctorRequestsPage() {
 
   const fetchRequests = async () => {
     try {
-      const response = await fetch('/api/requests');
+      const response = await fetch('/api/proctor/requests');
       const data = await response.json();
 
       if (data.success) {
-        // Filter requests for proctor's assigned students
         setRequests(data.data);
+        if (data.message) {
+          setMessage({ type: 'error', text: data.message });
+        }
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to load requests' });
       }
     } catch (error) {
       console.error('Error fetching requests:', error);

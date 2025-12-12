@@ -7,26 +7,16 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || session.user.role !== 'proctor') {
+    if (!session || !['proctor', 'proctor_manager'].includes(session.user.role)) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { searchParams } = new URL(request.url);
-    const proctorId = searchParams.get('proctorId') || session.user.id;
+    const proctorId = session.user.id;
 
     // Get proctor's assigned blocks
-    const proctor = await mongoDataStore.getEmployee(proctorId);
-    if (!proctor) {
-      return NextResponse.json(
-        { success: false, error: 'Proctor not found' },
-        { status: 404 }
-      );
-    }
-
-    // Get blocks where this proctor is assigned
     const allBlocks = await mongoDataStore.getBlocks();
     const proctorBlocks = allBlocks.filter(block => 
       block.proctor_id === proctorId
@@ -46,7 +36,9 @@ export async function GET(request: NextRequest) {
       proctorBlocks.some(block => block.block_id === placement.block)
     );
 
-    if (assignedPlacements.length === 0) {
+    const assignedStudentIds = assignedPlacements.map(p => p.student_id);
+
+    if (assignedStudentIds.length === 0) {
       return NextResponse.json({
         success: true,
         data: [],
@@ -54,34 +46,44 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get student details for assigned placements
+    // Get all requests and filter for assigned students only
+    const allRequests = await mongoDataStore.getRequests();
+    const proctorRequests = allRequests.filter(request =>
+      assignedStudentIds.includes(request.student_id)
+    );
+
+    // Get student details for the requests
     const students = await mongoDataStore.getStudents();
-    const assignedStudents = assignedPlacements.map(placement => {
-      const student = students.find(s => s.student_id === placement.student_id);
-      if (!student) return null;
+    const requestsWithStudentInfo = proctorRequests.map(request => {
+      const student = students.find(s => s.student_id === request.student_id);
+      const placement = assignedPlacements.find(p => p.student_id === request.student_id);
       
       return {
-        ...student,
-        room: placement.room,
-        block: placement.block,
-        placement_status: placement.status,
-        block_name: proctorBlocks.find(b => b.block_id === placement.block)?.name || placement.block
+        ...request,
+        student_name: student ? `${student.first_name} ${student.last_name}` : 'Unknown Student',
+        student_email: student?.email,
+        block: placement?.block,
+        room: placement?.room,
+        block_name: proctorBlocks.find(b => b.block_id === placement?.block)?.name
       };
-    }).filter(Boolean);
+    });
+
+    // Sort by creation date (newest first)
+    requestsWithStudentInfo.sort((a, b) => 
+      new Date(b.created_date).getTime() - new Date(a.created_date).getTime()
+    );
 
     return NextResponse.json({
       success: true,
-      data: assignedStudents,
+      data: requestsWithStudentInfo,
       blocks: proctorBlocks.map(block => ({
         block_id: block.block_id,
-        name: block.name,
-        capacity: block.capacity,
-        occupied: block.occupied
+        name: block.name
       }))
     });
 
   } catch (error) {
-    console.error('Error fetching assigned students:', error);
+    console.error('Error fetching proctor requests:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

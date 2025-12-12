@@ -76,7 +76,7 @@ export default function EmergencyPage() {
               <Phone className="h-6 w-6 text-red-600 mr-2" />
               <h3 className="text-lg font-semibold text-red-900">Emergency Hotline</h3>
             </div>
-            <p className="text-2xl font-bold text-red-600">911</p>
+            <p className="text-2xl font-bold text-red-600">991</p>
             <p className="text-sm text-red-700">24/7 Emergency Services</p>
           </div>
 
@@ -85,8 +85,8 @@ export default function EmergencyPage() {
               <Phone className="h-6 w-6 text-blue-600 mr-2" />
               <h3 className="text-lg font-semibold text-blue-900">Campus Security</h3>
             </div>
-            <p className="text-2xl font-bold text-blue-600">+1-555-0123</p>
-            <p className="text-sm text-blue-700">Campus Safety Office</p>
+            <p className="text-2xl font-bold text-blue-600">+251-58-881-1234</p>
+            <p className="text-sm text-blue-700">DMU Campus Security Office</p>
           </div>
 
           <div className="bg-green-50 border border-green-200 rounded-lg p-6">
@@ -94,8 +94,8 @@ export default function EmergencyPage() {
               <Phone className="h-6 w-6 text-green-600 mr-2" />
               <h3 className="text-lg font-semibold text-green-900">Medical Center</h3>
             </div>
-            <p className="text-2xl font-bold text-green-600">+1-555-0456</p>
-            <p className="text-sm text-green-700">Campus Health Services</p>
+            <p className="text-2xl font-bold text-green-600">+251-58-881-5678</p>
+            <p className="text-sm text-green-700">DMU Health Center</p>
           </div>
         </div>
 

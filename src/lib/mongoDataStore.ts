@@ -748,6 +748,29 @@ class MongoDataStore {
     const result = await Material.findByIdAndDelete(id);
     return !!result;
   }
+
+  // Emergency Contacts CRUD
+  async getEmergencyContacts() {
+    await this.init();
+    try {
+      const EmergencyContact = (await import('@/models/mongoose/EmergencyContact')).default;
+      return await EmergencyContact.find().lean();
+    } catch (error) {
+      console.log('EmergencyContact model not available:', error);
+      return [];
+    }
+  }
+
+  async getEmergencyContactByStudentId(studentId: string) {
+    await this.init();
+    try {
+      const EmergencyContact = (await import('@/models/mongoose/EmergencyContact')).default;
+      return await EmergencyContact.findOne({ student_id: studentId }).lean();
+    } catch (error) {
+      console.log('EmergencyContact model not available:', error);
+      return null;
+    }
+  }
 }
 
 // Create singleton instance

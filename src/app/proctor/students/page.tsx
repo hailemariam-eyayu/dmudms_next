@@ -18,10 +18,12 @@ export default function ProctorStudentsPage() {
   const { data: session, status } = useSession();
   const [students, setStudents] = useState<any[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<any[]>([]);
+  const [assignedBlocks, setAssignedBlocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [message, setMessage] = useState<string>('');
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -44,9 +46,14 @@ export default function ProctorStudentsPage() {
 
       if (data.success) {
         setStudents(data.data);
+        setAssignedBlocks(data.blocks || []);
+        setMessage(data.message || '');
+      } else {
+        setMessage(data.error || 'Failed to fetch students');
       }
     } catch (error) {
       console.error('Error fetching students:', error);
+      setMessage('Error connecting to server');
     } finally {
       setLoading(false);
     }
@@ -121,6 +128,16 @@ export default function ProctorStudentsPage() {
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">My Students</h1>
                 <p className="text-gray-600">Manage students assigned to your blocks</p>
+                {assignedBlocks.length > 0 && (
+                  <div className="mt-2">
+                    <span className="text-sm text-gray-500">Assigned to blocks: </span>
+                    {assignedBlocks.map((block, index) => (
+                      <span key={block.block_id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-2">
+                        {block.name} ({block.occupied}/{block.capacity})
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -249,7 +266,7 @@ export default function ProctorStudentsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{student.block} - Room {student.room}</div>
+                      <div className="text-sm text-gray-900">{student.block_name || student.block} - Room {student.room}</div>
                       <div className="text-sm text-gray-500">Block {student.block}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -289,8 +306,13 @@ export default function ProctorStudentsPage() {
             <p className="text-gray-500">
               {searchTerm || statusFilter !== 'all' 
                 ? 'No students match your current filters.' 
-                : 'No students have been assigned to your blocks yet.'}
+                : assignedBlocks.length === 0
+                  ? 'You have not been assigned to any blocks yet. Please contact the administration.'
+                  : 'No students have been placed in your assigned blocks yet.'}
             </p>
+            {message && (
+              <p className="text-sm text-gray-400 mt-2">{message}</p>
+            )}
           </div>
         )}
       </div>
@@ -328,7 +350,7 @@ export default function ProctorStudentsPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Room Assignment</label>
                   <p className="text-sm text-gray-900">
-                    {selectedStudent.block} - Room {selectedStudent.room}
+                    {selectedStudent.block_name || selectedStudent.block} - Room {selectedStudent.room}
                   </p>
                 </div>
                 <div>
