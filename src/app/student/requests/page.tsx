@@ -4,122 +4,194 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { 
-  ClipboardList, 
   Plus, 
-  Eye, 
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertCircle
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  AlertTriangle,
+  MessageSquare,
+  Calendar,
+  User,
+  Filter,
+  Search
 } from 'lucide-react';
+
+interface Request {
+  _id: string;
+  student_id: string;
+  type: 'maintenance' | 'replacement' | 'room_change' | 'complaint' | 'other';
+  category: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  description: string;
+  status: 'pending' | 'approved' | 'rejected' | 'done';
+  created_date: string;
+  resolved_date?: string;
+  resolved_by?: string;
+  approved_by?: string;
+  approved_date?: string;
+}
+
+const REQUEST_TYPES: Record<string, string> = {
+  maintenance: 'Maintenance',
+  replacement: 'Replacement',
+  room_change: 'Room Change',
+  complaint: 'Complaint',
+  other: 'Other'
+};
+
+const CATEGORIES: Record<string, string> = {
+  // Maintenance
+  plumbing: 'Plumbing',
+  electrical: 'Electrical',
+  furniture: 'Furniture',
+  cleaning: 'Cleaning',
+  hvac: 'HVAC/Ventilation',
+  // Replacement/Room Change
+  room_assignment: 'Room Assignment',
+  block_transfer: 'Block Transfer',
+  roommate_change: 'Roommate Change',
+  // Other
+  noise_complaint: 'Noise Complaint',
+  safety_issue: 'Safety Issue',
+  general_inquiry: 'General Inquiry'
+};
+
+const PRIORITIES: Record<string, string> = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  urgent: 'Urgent'
+};
 
 export default function StudentRequestsPage() {
   const { data: session, status } = useSession();
-  const [requests, setRequests] = useState<any[]>([]);
+  const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [filter, setFilter] = useState('all');
+
+  const [formData, setFormData] = useState({
+    type: 'maintenance' as const,
+    category: 'plumbing',
+    priority: 'medium' as const,
+    description: ''
+  });
 
   useEffect(() => {
     if (status === 'loading') return;
     if (!session || session.user.role !== 'student') {
       redirect('/auth/signin');
-    } else {
-      fetchRequests();
+      return;
     }
+
+    fetchRequests();
   }, [session, status]);
 
   const fetchRequests = async () => {
     try {
-      const response = await fetch(`/api/students/${session?.user?.id}/requests`);
+      const response = await fetch(`/api/students/${session?.user.id}/requests`);
       const data = await response.json();
-
+      
       if (data.success) {
-        setRequests(data.data);
+        setRequests(data.data || []);
       }
     } catch (error) {
       console.error('Error fetching requests:', error);
-      setMessage({ type: 'error', text: 'Failed to load requests' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateRequest = async (requestData: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+
     try {
-      const response = await fetch(`/api/students/${session?.user?.id}/requests`, {
+      const response = await fetch('/api/requests', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestData)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          student_id: session?.user.id
+        })
       });
 
       const data = await response.json();
 
       if (data.success) {
         setMessage({ type: 'success', text: 'Request submitted successfully!' });
-        setShowCreateModal(false);
+        setShowForm(false);
+        setFormData({
+          type: 'maintenance',
+          category: 'plumbing',
+          priority: 'medium',
+          description: ''
+        });
         fetchRequests();
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to submit request' });
       }
     } catch (error) {
-      console.error('Error creating request:', error);
       setMessage({ type: 'error', text: 'Failed to submit request' });
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'denied':
-        return 'bg-red-100 text-red-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'in_progress':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'approved':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'denied':
-        return <XCircle className="h-4 w-4" />;
-      case 'pending':
-        return <Clock className="h-4 w-4" />;
-      case 'in_progress':
-        return <AlertCircle className="h-4 w-4" />;
-      default:
-        return null;
+      case 'pending': return <Clock className="h-4 w-4 text-yellow-600" />;
+      case 'approved': return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'rejected': return <XCircle className="h-4 w-4 text-red-600" />;
+      case 'done': return <CheckCircle className="h-4 w-4 text-blue-600" />;
+      default: return <Clock className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      case 'done': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high':
-        return 'text-red-600';
-      case 'medium':
-        return 'text-yellow-600';
-      case 'low':
-        return 'text-green-600';
-      default:
-        return 'text-gray-600';
+      case 'urgent': return 'bg-red-100 text-red-800';
+      case 'high': return 'bg-orange-100 text-orange-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const getCategoriesForType = (type: string) => {
+    switch (type) {
+      case 'maintenance':
+        return ['plumbing', 'electrical', 'furniture', 'cleaning', 'hvac'];
+      case 'replacement':
+      case 'room_change':
+        return ['room_assignment', 'block_transfer', 'roommate_change'];
+      case 'complaint':
+        return ['noise_complaint', 'safety_issue'];
+      default:
+        return ['general_inquiry'];
+    }
+  };
+
+  const filteredRequests = requests.filter(request => {
+    if (filter === 'all') return true;
+    return request.status === filter;
+  });
 
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your requests...</p>
+          <p className="mt-4 text-gray-600">Loading requests...</p>
         </div>
       </div>
     );
@@ -127,19 +199,19 @@ export default function StudentRequestsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <ClipboardList className="h-8 w-8 text-blue-600 mr-3" />
+              <MessageSquare className="h-8 w-8 text-blue-600 mr-3" />
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">My Requests</h1>
                 <p className="text-gray-600">Submit and track your dormitory requests</p>
               </div>
             </div>
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => setShowForm(true)}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -153,7 +225,7 @@ export default function StudentRequestsPage() {
           <div className={`mb-6 p-4 rounded-lg flex items-center ${
             message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
           }`}>
-            <AlertCircle className="h-5 w-5 mr-2" />
+            <AlertTriangle className="h-5 w-5 mr-2" />
             {message.text}
           </div>
         )}
@@ -162,7 +234,7 @@ export default function StudentRequestsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
-              <ClipboardList className="h-8 w-8 text-blue-600" />
+              <MessageSquare className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
                 <div className="text-2xl font-bold text-gray-900">{requests.length}</div>
                 <div className="text-gray-600">Total Requests</div>
@@ -193,251 +265,192 @@ export default function StudentRequestsPage() {
           </div>
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
-              <XCircle className="h-8 w-8 text-red-600" />
+              <CheckCircle className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
                 <div className="text-2xl font-bold text-gray-900">
-                  {requests.filter(r => r.status === 'denied').length}
+                  {requests.filter(r => r.status === 'done').length}
                 </div>
-                <div className="text-gray-600">Denied</div>
+                <div className="text-gray-600">Completed</div>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Filters */}
+        <div className="mb-6 flex items-center space-x-4">
+          <Filter className="h-5 w-5 text-gray-400" />
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Requests</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="done">Completed</option>
+          </select>
         </div>
 
         {/* Requests List */}
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Request History</h2>
           </div>
-          <div className="divide-y divide-gray-200">
-            {requests.map((request) => (
-              <div key={request._id} className="p-6 hover:bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3">
-                      <h3 className="text-lg font-medium text-gray-900">{request.type}</h3>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
-                        {getStatusIcon(request.status)}
-                        <span className="ml-1 capitalize">{request.status}</span>
-                      </span>
-                      <span className={`text-xs font-medium uppercase ${getPriorityColor(request.priority)}`}>
-                        {request.priority} Priority
-                      </span>
-                    </div>
-                    <p className="mt-2 text-gray-600">{request.description}</p>
-                    <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
-                      <span>Submitted: {new Date(request.created_date).toLocaleDateString()}</span>
-                      {request.updated_date && request.updated_date !== request.created_date && (
-                        <span>Updated: {new Date(request.updated_date).toLocaleDateString()}</span>
-                      )}
-                      {request.block && request.room && (
-                        <span>Room: {request.block} - {request.room}</span>
-                      )}
-                    </div>
-                    {request.response && (
-                      <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="text-sm font-medium text-gray-900">Response:</div>
-                        <div className="text-sm text-gray-600 mt-1">{request.response}</div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="ml-4">
-                    <button
-                      onClick={() => setSelectedRequest(request)}
-                      className="p-2 text-gray-400 hover:text-blue-600"
-                    >
-                      <Eye className="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {requests.length === 0 && (
-          <div className="text-center py-12">
-            <ClipboardList className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Requests Yet</h3>
-            <p className="text-gray-500 mb-4">You haven't submitted any requests yet.</p>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Submit Your First Request
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Create Request Modal */}
-      {showCreateModal && (
-        <CreateRequestModal
-          onClose={() => setShowCreateModal(false)}
-          onSubmit={handleCreateRequest}
-        />
-      )}
-
-      {/* Request Detail Modal */}
-      {selectedRequest && (
-        <RequestDetailModal
-          request={selectedRequest}
-          onClose={() => setSelectedRequest(null)}
-        />
-      )}
-    </div>
-  );
-}
-
-// Create Request Modal Component
-function CreateRequestModal({ onClose, onSubmit }: { onClose: () => void, onSubmit: (data: any) => void }) {
-  const [formData, setFormData] = useState({
-    type: '',
-    description: '',
-    priority: 'medium'
-  });
-
-  const requestTypes = [
-    'Maintenance Request',
-    'Room Change Request',
-    'Facility Issue',
-    'Cleaning Request',
-    'Equipment Request',
-    'Other'
-  ];
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.type || !formData.description) {
-      return;
-    }
-    onSubmit(formData);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div className="mt-3">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Submit New Request</h3>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Request Type</label>
-              <select
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              >
-                <option value="">Select request type</option>
-                {requestTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-              <select
-                value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={4}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Please describe your request in detail..."
-                required
-              />
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
+          {filteredRequests.length === 0 ? (
+            <div className="text-center py-12">
+              <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Requests Found</h3>
+              <p className="text-gray-500 mb-4">
+                {filter === 'all' 
+                  ? "You haven't submitted any requests yet." 
+                  : `No ${filter} requests found.`}
+              </p>
               <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
+                onClick={() => setShowForm(true)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
-                Submit Request
+                Submit Your First Request
               </button>
             </div>
-          </form>
+          ) : (
+            <div className="divide-y divide-gray-200">
+              {filteredRequests.map((request) => (
+                <div key={request._id} className="p-6 hover:bg-gray-50">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        {getStatusIcon(request.status)}
+                        <span className="font-medium text-gray-900">
+                          {REQUEST_TYPES[request.type]} - {CATEGORIES[request.category]}
+                        </span>
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(request.priority)}`}>
+                          {PRIORITIES[request.priority]}
+                        </span>
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
+                          {request.status}
+                        </span>
+                      </div>
+                      <p className="text-gray-600 mb-3">{request.description}</p>
+                      <div className="flex items-center text-sm text-gray-500 space-x-4">
+                        <div className="flex items-center">
+                          <Calendar className="h-4 w-4 mr-1" />
+                          {new Date(request.created_date).toLocaleDateString()}
+                        </div>
+                        {request.resolved_by && (
+                          <div className="flex items-center">
+                            <User className="h-4 w-4 mr-1" />
+                            Handled by: {request.resolved_by}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
-    </div>
-  );
-}
 
-// Request Detail Modal Component
-function RequestDetailModal({ request, onClose }: { request: any, onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div className="mt-3">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Request Details</h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <XCircle className="h-5 w-5" />
-            </button>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Type</label>
-              <p className="text-sm text-gray-900">{request.type}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Status</label>
-              <p className="text-sm text-gray-900 capitalize">{request.status}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Priority</label>
-              <p className="text-sm text-gray-900 capitalize">{request.priority}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Description</label>
-              <p className="text-sm text-gray-900">{request.description}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Submitted</label>
-              <p className="text-sm text-gray-900">{new Date(request.created_date).toLocaleString()}</p>
-            </div>
-            {request.response && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Response</label>
-                <p className="text-sm text-gray-900">{request.response}</p>
-              </div>
-            )}
-          </div>
+        {/* Request Form Modal */}
+        {showForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Submit New Request</h2>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Request Type *
+                  </label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => {
+                      const newType = e.target.value as any;
+                      const availableCategories = getCategoriesForType(newType);
+                      setFormData({ 
+                        ...formData, 
+                        type: newType,
+                        category: availableCategories[0]
+                      });
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    {Object.entries(REQUEST_TYPES).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
+                </div>
 
-          <div className="mt-6 flex justify-end">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-            >
-              Close
-            </button>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Category *
+                  </label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    {getCategoriesForType(formData.type).map((category) => (
+                      <option key={category} value={category}>
+                        {CATEGORIES[category as keyof typeof CATEGORIES]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Priority *
+                  </label>
+                  <select
+                    value={formData.priority}
+                    onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    {Object.entries(PRIORITIES).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description *
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    rows={4}
+                    placeholder="Please describe your request in detail..."
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Submit Request
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

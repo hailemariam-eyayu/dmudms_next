@@ -1,94 +1,111 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dataStore from '@/lib/dataStore';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import Request from '@/models/mongoose/Request';
+import connectDB from '@/lib/mongoose';
 
-// GET /api/requests - Get all requests with optional filters
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await connectDB();
+
+    let query = {};
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const type = searchParams.get('type');
-    const student_id = searchParams.get('student_id');
+    const role = session.user.role;
+    const userId = session.user.id;
 
-    let requests = dataStore.getRequests();
-
-    // Apply filters
-    if (status) {
-      requests = requests.filter(r => r.status === status);
-    }
-
-    if (type) {
-      requests = requests.filter(r => r.type === type);
-    }
-
-    if (student_id) {
-      requests = requests.filter(r => r.student_id === student_id);
-    }
-
-    // Enrich with student data
-    const enrichedRequests = requests.map(request => {
-      const student = dataStore.getStudent(request.student_id);
-      return {
-        ...request,
-        student
+    // Role-based filtering
+    if (role === 'student') {
+      query = { student_id: userId };
+    } else if (role === 'maintainer') {
+      // Maintainer sees maintenance requests
+      query = { 
+        type: 'maintenance',
+        status: { $in: ['approved', 'done'] }
       };
+    } else if (role === 'coordinator') {
+      // Coordinator sees replacement and room change requests
+      query = { 
+        type: { $in: ['replacement', 'room_change'] },
+        status: { $in: ['pending', 'approved'] }
+      };
+    } else if (role === 'admin' || role === 'directorate') {
+      // Admin and directorate see all requests
+      const status = searchParams.get('status');
+      const type = searchParams.get('type');
+      
+      if (status) query = { ...query, status };
+      if (type) query = { ...query, type };
+    } else {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const requests = await Request.find(query)
+      .sort({ created_date: -1 })
+      .limit(100);
+
+    return NextResponse.json({ 
+      success: true, 
+      data: requests 
     });
 
-    return NextResponse.json({
-      success: true,
-      data: enrichedRequests
-    });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch requests' },
-      { status: 500 }
-    );
+    console.error('Error fetching requests:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Failed to fetch requests' 
+    }, { status: 500 });
   }
 }
 
-// POST /api/requests - Create a new request
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'student') {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await connectDB();
+
     const body = await request.json();
-    
+    const { type, category, priority, description } = body;
+
     // Validate required fields
-    const requiredFields = ['student_id', 'type', 'description'];
-    for (const field of requiredFields) {
-      if (!body[field]) {
-        return NextResponse.json(
-          { success: false, error: `${field} is required` },
-          { status: 400 }
-        );
-      }
+    if (!type || !category || !priority || !description) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Missing required fields' 
+      }, { status: 400 });
     }
 
-    // Check if student exists
-    const student = dataStore.getStudent(body.student_id);
-    if (!student) {
-      return NextResponse.json(
-        { success: false, error: 'Student not found' },
-        { status: 404 }
-      );
-    }
+    // Create new request
+    const newRequest = new Request({
+      student_id: session.user.id,
+      type,
+      category,
+      priority,
+      description: description.trim(),
+      status: 'pending',
+      created_date: new Date()
+    });
 
-    const requestData = {
-      student_id: body.student_id,
-      type: body.type,
-      description: body.description,
-      status: 'pending' as const,
-      created_date: new Date().toISOString().split('T')[0]
-    };
+    await newRequest.save();
 
-    const newRequest = dataStore.createRequest(requestData);
-
-    return NextResponse.json({
-      success: true,
+    return NextResponse.json({ 
+      success: true, 
       data: newRequest,
-      message: 'Request created successfully'
-    }, { status: 201 });
+      message: 'Request submitted successfully' 
+    });
+
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: 'Failed to create request' },
-      { status: 500 }
-    );
+    console.error('Error creating request:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Failed to create request' 
+    }, { status: 500 });
   }
 }

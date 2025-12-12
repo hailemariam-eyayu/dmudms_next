@@ -34,9 +34,57 @@ class MongoDataStore {
 
   async forceReseed() {
     await connectDB();
-    this.initialized = false; // Reset initialization flag
-    await this.seedDataIfEmpty();
+    console.log('🌱 ADMIN TRIGGERED: Force reseeding database...');
+    
+    // Clear existing data
+    await Student.deleteMany({});
+    await Employee.deleteMany({});
+    await Block.deleteMany({});
+    await Room.deleteMany({});
+    await StudentPlacement.deleteMany({});
+    await Request.deleteMany({});
+    await Emergency.deleteMany({});
+    await Notification.deleteMany({});
+    
+    // Also clear emergency contacts if the model exists
+    try {
+      const EmergencyContact = (await import('@/models/mongoose/EmergencyContact')).default;
+      await EmergencyContact.deleteMany({});
+    } catch (error) {
+      console.log('EmergencyContact model not available, skipping...');
+    }
+
+    // Seed with sample data
+    await this.seedSampleData();
+    
     this.initialized = true;
+    console.log('✅ ADMIN RESEED: Database reseeded successfully');
+  }
+
+  private async seedSampleData() {
+    console.log('Seeding database with sample data...');
+
+    // Seed Employees with hashed passwords (all use "default123")
+    const employees = sampleEmployees.map(emp => ({
+      ...emp,
+      password: hashPassword('default123')
+    }));
+    await Employee.insertMany(employees);
+
+    // Seed Students with hashed passwords (all use "default123")
+    const students = sampleStudents.map(student => ({
+      ...student,
+      password: hashPassword('default123')
+    }));
+    await Student.insertMany(students);
+
+    // Seed other data
+    await Block.insertMany(sampleBlocks);
+    await Room.insertMany(sampleRooms);
+    await StudentPlacement.insertMany(sampleStudentPlacements);
+    await Request.insertMany(sampleRequests);
+    await Emergency.insertMany(sampleEmergencies);
+    await Notification.insertMany(sampleNotifications);
   }
 
   private async seedDataIfEmpty() {
@@ -51,41 +99,10 @@ class MongoDataStore {
         return; // Data already exists, don't reseed
       }
 
-      console.log('Seeding database with sample data...');
+      // Only seed if database is completely empty
+      await this.seedSampleData();
 
-      // Seed Employees with hashed passwords (all use "default123")
-      const employees = sampleEmployees.map(emp => ({
-        ...emp,
-        password: hashPassword('default123')
-      }));
-      await Employee.insertMany(employees);
-
-      // Seed Students with hashed passwords (all use "default123")
-      const students = sampleStudents.map(student => ({
-        ...student,
-        password: hashPassword('default123')
-      }));
-      await Student.insertMany(students);
-
-      // Seed Blocks
-      await Block.insertMany(sampleBlocks);
-
-      // Seed Rooms
-      await Room.insertMany(sampleRooms);
-
-      // Seed Student Placements
-      await StudentPlacement.insertMany(sampleStudentPlacements);
-
-      // Seed Requests
-      await Request.insertMany(sampleRequests);
-
-      // Seed Emergencies
-      await Emergency.insertMany(sampleEmergencies);
-
-      // Seed Notifications
-      await Notification.insertMany(sampleNotifications);
-
-      // Seed Emergency Contacts
+      // Seed Emergency Contacts (additional to what's in seedSampleData)
       try {
         const EmergencyContact = (await import('@/models/mongoose/EmergencyContact')).default;
         const { sampleEmergencyContacts } = await import('@/data/sampleData');

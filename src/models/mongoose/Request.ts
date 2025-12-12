@@ -2,7 +2,9 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IRequest extends Document {
   student_id: string;
-  type: 'replacement' | 'maintenance' | 'complaint' | 'other';
+  type: 'maintenance' | 'replacement' | 'room_change' | 'complaint' | 'other';
+  category: 'plumbing' | 'electrical' | 'furniture' | 'cleaning' | 'hvac' | 'room_assignment' | 'block_transfer' | 'roommate_change' | 'noise_complaint' | 'safety_issue' | 'general_inquiry';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
   description: string;
   status: 'pending' | 'approved' | 'rejected' | 'done';
   created_date: Date;
@@ -23,9 +25,26 @@ const RequestSchema: Schema = new Schema({
   },
   type: {
     type: String,
-    enum: ['replacement', 'maintenance', 'complaint', 'other'],
+    enum: ['maintenance', 'replacement', 'room_change', 'complaint', 'other'],
     required: true,
     default: 'maintenance'
+  },
+  category: {
+    type: String,
+    enum: [
+      // Maintenance categories
+      'plumbing', 'electrical', 'furniture', 'cleaning', 'hvac',
+      // Replacement categories  
+      'room_assignment', 'block_transfer', 'roommate_change',
+      // Other categories
+      'noise_complaint', 'safety_issue', 'general_inquiry'
+    ],
+    required: true
+  },
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high', 'urgent'],
+    default: 'medium'
   },
   description: {
     type: String,
