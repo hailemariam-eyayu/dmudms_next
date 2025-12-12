@@ -15,31 +15,40 @@ export default withAuth(
 
     // Define role-based route permissions
     const roleRoutes: Record<string, string[]> = {
-      admin: ['/admin', '/directorate', '/proctor', '/student'],
-      directorate: ['/directorate', '/admin/students', '/placements', '/requests', '/emergency'],
+      admin: ['/admin', '/directorate', '/proctor', '/student', '/coordinator'],
+      directorate: ['/directorate', '/admin/students', '/admin/employees', '/placements', '/requests', '/emergency'],
       proctor: ['/proctor'],
       student: ['/student'],
-      coordinator: ['/coordinator'],
+      coordinator: ['/coordinator', '/admin/students', '/placements', '/requests'],
       registrar: ['/registrar'],
       maintainer: ['/maintainer']
     };
 
     // Check if user has access to the requested route
     const allowedRoutes = roleRoutes[userRole] || [];
-    const hasAccess = allowedRoutes.some(route => pathname.startsWith(route));
-
-    // Allow access to common routes
+    
+    // Allow access to common routes first
     const commonRoutes = ['/dashboard', '/profile', '/api', '/auth'];
     const isCommonRoute = commonRoutes.some(route => pathname.startsWith(route));
+    
+    if (isCommonRoute) {
+      return NextResponse.next();
+    }
+    
+    // Check specific route access - sort by length (longest first) to match most specific routes first
+    const sortedRoutes = allowedRoutes.sort((a, b) => b.length - a.length);
+    const hasAccess = sortedRoutes.some(route => pathname.startsWith(route));
+    
+    // Debug logging removed - middleware working correctly
 
-    if (!hasAccess && !isCommonRoute) {
+    if (!hasAccess) {
       // Redirect to appropriate dashboard based on role
       const dashboardRoutes: Record<string, string> = {
         admin: '/admin',
         directorate: '/directorate',
         proctor: '/proctor',
         student: '/student',
-        coordinator: '/dashboard',
+        coordinator: '/coordinator',
         registrar: '/dashboard',
         maintainer: '/dashboard'
       };
@@ -61,6 +70,7 @@ export const config = {
   matcher: [
     '/admin/:path*',
     '/directorate/:path*',
+    '/coordinator/:path*',
     '/proctor/:path*',
     '/student/:path*',
     '/dashboard/:path*',

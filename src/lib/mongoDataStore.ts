@@ -429,8 +429,19 @@ class MongoDataStore {
 
   async createEmergency(emergencyData: any) {
     await this.init();
-    const emergency = new Emergency(emergencyData);
-    return await emergency.save();
+    console.log('🏗️ Creating emergency with data:', JSON.stringify(emergencyData, null, 2));
+    
+    try {
+      const emergency = new Emergency(emergencyData);
+      console.log('📝 Emergency model created, saving...');
+      const result = await emergency.save();
+      console.log('✅ Emergency saved successfully:', result._id);
+      return result;
+    } catch (error: any) {
+      console.error('❌ Error in createEmergency:', error);
+      console.error('📋 Emergency data that failed:', emergencyData);
+      throw error;
+    }
   }
 
   async updateEmergency(id: number, updates: any) {

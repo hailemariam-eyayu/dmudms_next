@@ -165,7 +165,7 @@ export default function PrivacyPolicyPage() {
               <div className="space-y-2 text-gray-700">
                 <p><strong>Data Protection Officer</strong></p>
                 <p>Email: privacy@dmu.edu</p>
-                <p>Phone: +251-11-XXX-XXXX</p>
+                <p>Phone: +251-58-881-1234</p>
                 <p>Office: Student Affairs Department</p>
                 <p>Debre Markos University</p>
               </div>

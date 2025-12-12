@@ -210,8 +210,8 @@ export default function TermsOfServicePage() {
               </p>
               <div className="space-y-2 text-gray-700">
                 <p><strong>System Administrator</strong></p>
-                <p>Email: admin@dmu.edu</p>
-                <p>Phone: +251-11-XXX-XXXX</p>
+                <p>Email: admin@dmu.edu.et</p>
+                <p>Phone: +251-58-881-1234</p>
                 <p>Office: IT Department</p>
                 <p>Debre Markos University</p>
                 <p>Debre Markos, Ethiopia</p>

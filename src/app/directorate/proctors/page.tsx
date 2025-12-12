@@ -225,9 +225,12 @@ export default function ProctorAssignmentPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div>
-                          <div>Gender: <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${
-                            block.gender === 'male' ? 'bg-blue-100 text-blue-800' : 'bg-pink-100 text-pink-800'
-                          }`}>{block.gender}</span></div>
+                          <div>Reserved For: <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${
+                            block.reserved_for === 'male' ? 'bg-blue-100 text-blue-800' : 
+                            block.reserved_for === 'female' ? 'bg-pink-100 text-pink-800' :
+                            block.reserved_for === 'disabled' ? 'bg-purple-100 text-purple-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>{block.reserved_for}</span></div>
                           <div>Capacity: {block.capacity}</div>
                           <div>Status: {block.status}</div>
                         </div>
@@ -252,14 +255,14 @@ export default function ProctorAssignmentPage() {
                         >
                           <option value="">Select Proctor</option>
                           {proctors
-                            .filter(proctor => proctor.gender === block.gender)
+                            .filter(proctor => proctor.gender === block.reserved_for)
                             .map((proctor) => (
                             <option key={proctor.employee_id} value={proctor.employee_id}>
                               {proctor.first_name} {proctor.last_name} ({proctor.employee_id}) - {proctor.gender}
                             </option>
                           ))}
-                          {proctors.filter(proctor => proctor.gender === block.gender).length === 0 && (
-                            <option disabled>No {block.gender} proctors available</option>
+                          {proctors.filter(proctor => proctor.gender === block.reserved_for).length === 0 && (
+                            <option disabled>No {block.reserved_for} proctors available</option>
                           )}
                         </select>
                       </td>

@@ -51,7 +51,7 @@ export default function Header() {
           { label: 'My Room', href: '/student/placement' },
           { label: 'Requests', href: '/student/requests' },
           { label: 'Materials', href: '/student/materials' },
-          { label: 'Emergency', href: '/student/emergency' }
+          { label: 'Emergency', href: '/student/emergency-contact' }
         ];
       
       default:

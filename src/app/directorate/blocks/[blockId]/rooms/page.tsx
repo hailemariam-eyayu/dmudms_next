@@ -13,6 +13,7 @@ export default function BlockRoomsPage({ params }: { params: Promise<{ blockId: 
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<any>(null);
 
   useEffect(() => {
     const getParams = async () => {
@@ -49,6 +50,31 @@ export default function BlockRoomsPage({ params }: { params: Promise<{ blockId: 
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditRoom = (room: any) => {
+    setEditingRoom(room);
+  };
+
+  const handleDeleteRoom = async (room: any) => {
+    if (!confirm(`Are you sure you want to delete room ${room.room_number}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/rooms/${room.room_id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        fetchBlockAndRooms();
+      } else {
+        alert('Failed to delete room');
+      }
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      alert('Error deleting room');
     }
   };
 
@@ -248,10 +274,18 @@ export default function BlockRoomsPage({ params }: { params: Promise<{ blockId: 
                           </div>
                         </div>
                         <div className="mt-3 flex justify-end space-x-2">
-                          <button className="p-1 text-gray-400 hover:text-blue-600">
+                          <button 
+                            onClick={() => handleEditRoom(room)}
+                            className="p-1 text-gray-400 hover:text-blue-600"
+                            title="Edit Room"
+                          >
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button className="p-1 text-gray-400 hover:text-red-600">
+                          <button 
+                            onClick={() => handleDeleteRoom(room)}
+                            className="p-1 text-gray-400 hover:text-red-600"
+                            title="Delete Room"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
@@ -294,6 +328,18 @@ export default function BlockRoomsPage({ params }: { params: Promise<{ blockId: 
           onClose={() => setShowCreateForm(false)}
           onSuccess={() => {
             setShowCreateForm(false);
+            fetchBlockAndRooms();
+          }}
+        />
+      )}
+
+      {/* Edit Room Modal */}
+      {editingRoom && (
+        <EditRoomModal
+          room={editingRoom}
+          onClose={() => setEditingRoom(null)}
+          onSuccess={() => {
+            setEditingRoom(null);
             fetchBlockAndRooms();
           }}
         />

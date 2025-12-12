@@ -74,7 +74,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="mailto:support@dmu.edu" className="text-gray-600 hover:text-gray-900 text-sm">
+                <a href="mailto:support@dmu.edu.et" className="text-gray-600 hover:text-gray-900 text-sm">
                   Contact Support
                 </a>
               </li>
