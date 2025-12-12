@@ -3,17 +3,16 @@
 ## 🎯 Problem Identified
 Vercel is likely using the **WRONG DATABASE** which is empty.
 
-### ✅ Correct Database (HAS DATA)
-- **Cluster**: `cluster0.rp9qif7`
+### ✅ Production Database (NOW HAS DATA)
+- **Cluster**: `cluster0.hxcedpm`
 - **Employees**: 10 users (Employee1-Employee10)
 - **Students**: 10 users (Student1-Student10)
-- **Status**: 🟢 Working with correct data
+- **Status**: 🟢 Seeded with production data
 
-### ❌ Wrong Database (EMPTY)
-- **Cluster**: `cluster0.hxcedpm` 
-- **Employees**: 0 users
-- **Students**: 0 users
-- **Status**: 🔴 Empty - causes login failures
+### 📝 Database Change
+- **Previous**: Used `cluster0.rp9qif7`
+- **Current**: Now using `cluster0.hxcedpm` as requested
+- **Action**: Database was seeded with fresh data
 
 ## 🔧 STEP-BY-STEP FIX
 
@@ -28,7 +27,7 @@ Vercel is likely using the **WRONG DATABASE** which is empty.
 4. Click **Edit** on the MONGODB_URI variable
 5. Replace the value with:
    ```
-   mongodb+srv://dmudms:dmudms@cluster0.rp9qif7.mongodb.net/dormitory_management?retryWrites=true&w=majority&appName=Cluster0
+   mongodb+srv://dmudms:dmudms@cluster0.hxcedpm.mongodb.net/dormitory_management?retryWrites=true&w=majority&appName=Cluster0
    ```
 6. Click **Save**
 
@@ -67,7 +66,7 @@ After redeployment, the following should work:
 ## ⚠️ If Still Not Working
 
 1. **Check Environment Variables Again**
-   - Ensure MONGODB_URI points to `cluster0.rp9qif7`
+   - Ensure MONGODB_URI points to `cluster0.hxcedpm`
    - Verify NEXTAUTH_URL is `https://dmudms-next.vercel.app`
    - Check DEMO_MODE is set to `false`
 
@@ -89,9 +88,10 @@ After redeployment, the following should work:
 
 ## 🎯 Root Cause
 
-The issue was **database confusion**:
-- Your local scripts were updating the correct database (`cluster0.rp9qif7`)
-- But Vercel was configured to use the empty database (`cluster0.hxcedpm`)
-- This caused login failures because Employee1 exists in the correct database but not in the empty one
+Database has been switched and seeded:
+- Now using `cluster0.hxcedpm` as the production database
+- Database was seeded with 10 employees and 10 students
+- Employee1 exists with correct password in the new database
+- Vercel needs to be updated to use `cluster0.hxcedpm`
 
-**Solution**: Update Vercel to use the correct database URI.
+**Solution**: Update Vercel to use the newly seeded database URI.
