@@ -14,6 +14,7 @@ import {
   Search,
   Filter
 } from 'lucide-react';
+import ProfileAvatar from '@/components/ProfileAvatar';
 
 interface Proctor {
   _id: string;
@@ -169,7 +170,7 @@ export default function AssignProctors() {
       (block.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (block.block_id || '').toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesGender = filterGender === 'all' || block.gender === filterGender;
+    const matchesGender = filterGender === 'all' || block.reserved_for === filterGender;
     
     const isAssigned = assignments[block.block_id] || block.proctor_id;
     const matchesAssigned = 
@@ -300,11 +301,11 @@ export default function AssignProctors() {
               return (
                 <div key={proctor._id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                   <div className="flex items-center">
-                    <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center mr-3">
-                      <span className="text-xs font-medium text-gray-700">
-                        {proctor.first_name.charAt(0)}{proctor.last_name.charAt(0)}
-                      </span>
-                    </div>
+                    <ProfileAvatar 
+                      name={`${proctor.first_name} ${proctor.last_name}`} 
+                      size="sm"
+                      className="mr-3"
+                    />
                     <div>
                       <div className="text-sm font-medium text-gray-900">
                         {proctor.first_name} {proctor.last_name}
@@ -347,9 +348,11 @@ export default function AssignProctors() {
                   onChange={(e) => setFilterGender(e.target.value)}
                   className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
-                  <option value="all">All Genders</option>
+                  <option value="all">All Types</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
+                  <option value="disabled">Disabled</option>
+                  <option value="mixed">Mixed</option>
                 </select>
               </div>
               <select
@@ -371,7 +374,7 @@ export default function AssignProctors() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Block Assignments</h2>
               <div className="text-sm text-gray-600 bg-blue-50 px-3 py-2 rounded-lg">
-                ℹ️ Only proctors matching the block's gender are shown
+                ℹ️ Only proctors matching the block's reserved type are shown
               </div>
             </div>
           </div>
@@ -383,7 +386,7 @@ export default function AssignProctors() {
                     Block
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Gender
+                    Reserved For
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Capacity
@@ -414,18 +417,36 @@ export default function AssignProctors() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${
-                          block.gender === 'male' 
+                          block.reserved_for === 'male' 
                             ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-pink-100 text-pink-800'
+                            : block.reserved_for === 'female'
+                            ? 'bg-pink-100 text-pink-800'
+                            : block.reserved_for === 'disabled'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {block.gender}
+                          {block.reserved_for}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {block.occupied}/{block.capacity}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {block.proctor_id ? getProctorName(block.proctor_id) : (
+                        {block.proctor_id ? (
+                          <div className="flex items-center">
+                            <ProfileAvatar 
+                              name={getProctorName(block.proctor_id)} 
+                              size="sm"
+                              className="mr-3"
+                            />
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {getProctorName(block.proctor_id)}
+                              </div>
+                              <div className="text-gray-500">{block.proctor_id}</div>
+                            </div>
+                          </div>
+                        ) : (
                           <span className="text-gray-400">Unassigned</span>
                         )}
                       </td>
@@ -439,14 +460,14 @@ export default function AssignProctors() {
                         >
                           <option value="">Select Proctor</option>
                           {proctors
-                            .filter(proctor => proctor.gender === block.gender)
+                            .filter(proctor => proctor.gender === block.reserved_for)
                             .map((proctor) => (
                             <option key={proctor._id} value={proctor.employee_id}>
                               {proctor.first_name} {proctor.last_name} ({proctor.employee_id}) - {proctor.gender}
                             </option>
                           ))}
-                          {proctors.filter(proctor => proctor.gender === block.gender).length === 0 && (
-                            <option disabled>No {block.gender} proctors available</option>
+                          {proctors.filter(proctor => proctor.gender === block.reserved_for).length === 0 && (
+                            <option disabled>No {block.reserved_for} proctors available</option>
                           )}
                         </select>
                       </td>

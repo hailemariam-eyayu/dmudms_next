@@ -20,8 +20,18 @@ export default function SignIn() {
     if (status === 'loading') return;
     
     if (session) {
-      // User is already logged in, redirect to dashboard
-      router.push('/dashboard');
+      // User is already logged in, redirect to role-specific dashboard
+      const roleRedirects = {
+        admin: '/admin',
+        directorate: '/directorate',
+        coordinator: '/coordinator',
+        proctor: '/proctor',
+        registrar: '/dashboard/registrar',
+        maintainer: '/dashboard/maintainer',
+        student: '/student',
+        proctormanager: '/proctormanager'
+      };
+      router.push(roleRedirects[session.user.role as keyof typeof roleRedirects] || '/dashboard/default');
     }
   }, [session, status, router]);
 
@@ -67,17 +77,18 @@ export default function SignIn() {
         // Get the session to determine redirect
         const session = await getSession();
         if (session?.user?.role) {
-          // Redirect based on role
+          // Redirect directly to role-specific dashboard
           const roleRedirects = {
-            admin: '/dashboard',
-            directorate: '/dashboard',
-            coordinator: '/dashboard',
-            proctor: '/dashboard',
-            registrar: '/dashboard',
-            maintainer: '/dashboard',
-            student: '/dashboard'
+            admin: '/admin',
+            directorate: '/directorate',
+            coordinator: '/coordinator',
+            proctor: '/proctor',
+            registrar: '/dashboard/registrar',
+            maintainer: '/dashboard/maintainer',
+            student: '/student',
+            proctormanager: '/proctormanager'
           };
-          router.push(roleRedirects[session.user.role as keyof typeof roleRedirects] || '/dashboard');
+          router.push(roleRedirects[session.user.role as keyof typeof roleRedirects] || '/dashboard/default');
         }
       }
     } catch (error) {

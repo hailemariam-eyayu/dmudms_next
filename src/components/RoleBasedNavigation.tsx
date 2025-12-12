@@ -15,7 +15,8 @@ import {
   Bell,
   Shield,
   BarChart3,
-  User
+  User,
+  Phone
 } from 'lucide-react';
 import ProfileAvatar from '@/components/ProfileAvatar';
 
@@ -68,6 +69,7 @@ export default function RoleBasedNavigation() {
         return [
           { name: 'Dashboard', href: '/proctor', icon: Home },
           { name: 'My Students', href: '/proctor/students', icon: Users },
+          { name: 'Emergency Contacts', href: '/proctor/emergency-contacts', icon: Phone },
           { name: 'Materials', href: '/proctor/materials', icon: Package },
           { name: 'Requests', href: '/proctor/requests', icon: ClipboardList },
           { name: 'Emergencies', href: '/proctor/emergencies', icon: AlertTriangle },

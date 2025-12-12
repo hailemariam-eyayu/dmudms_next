@@ -65,6 +65,7 @@ export default function Header() {
         return [
           { label: 'Dashboard', href: '/proctor' },
           { label: 'My Students', href: '/proctor/students' },
+          { label: 'Emergency Contacts', href: '/proctor/emergency-contacts' },
           { label: 'Materials', href: '/proctor/materials' },
           { label: 'Requests', href: '/proctor/requests' },
           { label: 'Emergencies', href: '/proctor/emergencies' }

@@ -19,9 +19,41 @@ export async function PUT(
     const { status, resolved_by } = body;
 
     // Check permissions based on role
-    const allowedRoles = ['admin', 'directorate', 'coordinator', 'maintainer'];
+    const allowedRoles = ['admin', 'directorate', 'coordinator', 'maintainer', 'proctor', 'proctor_manager'];
     if (!allowedRoles.includes(session.user.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+    }
+
+    // For proctors, verify they can only update requests from their assigned students
+    if (session.user.role === 'proctor') {
+      const mongoDataStore = (await import('@/lib/mongoDataStore')).default;
+      
+      // Get proctor's assigned blocks
+      const allBlocks = await mongoDataStore.getBlocks();
+      const proctorBlocks = allBlocks.filter(block => 
+        block.proctor_id === session.user.id
+      );
+
+      if (proctorBlocks.length === 0) {
+        return NextResponse.json({ success: false, error: 'No blocks assigned to this proctor' }, { status: 403 });
+      }
+
+      // Get students in assigned blocks
+      const allPlacements = await mongoDataStore.getStudentPlacements();
+      const assignedPlacements = allPlacements.filter(placement =>
+        proctorBlocks.some(block => block.block_id === placement.block)
+      );
+      const assignedStudentIds = assignedPlacements.map(p => p.student_id);
+
+      // Get the request to check if it's from an assigned student
+      const requestToUpdate = await Request.findById(id);
+      if (!requestToUpdate) {
+        return NextResponse.json({ success: false, error: 'Request not found' }, { status: 404 });
+      }
+
+      if (!assignedStudentIds.includes(requestToUpdate.student_id)) {
+        return NextResponse.json({ success: false, error: 'You can only update requests from your assigned students' }, { status: 403 });
+      }
     }
 
     await connectDB();
