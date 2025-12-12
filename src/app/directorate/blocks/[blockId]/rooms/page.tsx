@@ -493,3 +493,147 @@ function CreateRoomModal({
     </div>
   );
 }
+
+// Edit Room Modal Component
+function EditRoomModal({ 
+  room, 
+  onClose, 
+  onSuccess 
+}: { 
+  room: any;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [formData, setFormData] = useState({
+    status: room.status || 'available',
+    capacity: room.capacity || 6,
+    current_occupancy: room.current_occupancy || 0,
+    disability_accessible: room.disability_accessible || false
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const response = await fetch(`/api/rooms/${room.room_id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        onSuccess();
+      } else {
+        const error = await response.json();
+        alert(`Failed to update room: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error updating room:', error);
+      alert('Error updating room');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="mt-3">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Edit Room {room.room_number || room.room_id}
+          </h3>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Room ID</label>
+              <input
+                type="text"
+                value={room.room_id}
+                disabled
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">Room ID cannot be changed</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="available">Available</option>
+                <option value="occupied">Occupied</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="reserved">Reserved</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
+              <input
+                type="number"
+                value={formData.capacity}
+                onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                min="1"
+                max="12"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Current Occupancy</label>
+              <input
+                type="number"
+                value={formData.current_occupancy}
+                onChange={(e) => setFormData({ ...formData, current_occupancy: parseInt(e.target.value) })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                min="0"
+                max={formData.capacity}
+                required
+              />
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="disability_accessible"
+                checked={formData.disability_accessible}
+                onChange={(e) => setFormData({ ...formData, disability_accessible: e.target.checked })}
+                className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+              />
+              <label htmlFor="disability_accessible" className="ml-2 block text-sm text-gray-900">
+                Disability Accessible
+              </label>
+            </div>
+
+            {room.floor === 0 && (
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  ♿ Ground floor rooms are typically disability accessible.
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              >
+                Update Room
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
