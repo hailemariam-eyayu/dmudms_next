@@ -60,6 +60,10 @@ export default function RoleBasedNavigation() {
           { name: 'View Blocks', href: '/coordinator/blocks', icon: Building },
           { name: 'View Assignments', href: '/coordinator/assignments', icon: ClipboardList },
           { name: 'Assign Proctors', href: '/coordinator/assign-proctors', icon: Settings },
+          { name: 'Proctor Students', href: '/proctor/students', icon: Users },
+          { name: 'Proctor Requests', href: '/proctor/requests', icon: ClipboardList },
+          { name: 'Proctor Emergencies', href: '/proctor/emergencies', icon: AlertTriangle },
+          { name: 'Emergency Contacts', href: '/proctor/emergency-contacts', icon: Phone },
           { name: 'Reports', href: '/coordinator/reports', icon: BarChart3 },
           { name: 'All Students', href: '/admin/students', icon: Users },
           { name: 'My Profile', href: '/profile', icon: User }

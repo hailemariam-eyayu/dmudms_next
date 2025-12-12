@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || session.user.role !== 'proctor') {
+    if (!session || !['proctor', 'proctor_manager', 'coordinator'].includes(session.user.role)) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -17,20 +17,31 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const proctorId = searchParams.get('proctorId') || session.user.id;
 
-    // Get proctor's assigned blocks
-    const proctor = await mongoDataStore.getEmployee(proctorId);
-    if (!proctor) {
-      return NextResponse.json(
-        { success: false, error: 'Proctor not found' },
-        { status: 404 }
-      );
-    }
-
-    // Get blocks where this proctor is assigned
+    // Get all blocks
     const allBlocks = await mongoDataStore.getBlocks();
-    const proctorBlocks = allBlocks.filter(block => 
-      block.proctor_id === proctorId
-    );
+    
+    let proctorBlocks;
+    
+    if (session.user.role === 'coordinator') {
+      // Coordinators can see all students or filter by specific proctor
+      if (searchParams.get('proctorId')) {
+        // Filter by specific proctor
+        proctorBlocks = allBlocks.filter(block => block.proctor_id === proctorId);
+      } else {
+        // Show all blocks with assigned proctors
+        proctorBlocks = allBlocks.filter(block => block.proctor_id);
+      }
+    } else {
+      // Proctors can only see their own assigned blocks
+      const proctor = await mongoDataStore.getEmployee(proctorId);
+      if (!proctor) {
+        return NextResponse.json(
+          { success: false, error: 'Proctor not found' },
+          { status: 404 }
+        );
+      }
+      proctorBlocks = allBlocks.filter(block => block.proctor_id === proctorId);
+    }
 
     if (proctorBlocks.length === 0) {
       return NextResponse.json({

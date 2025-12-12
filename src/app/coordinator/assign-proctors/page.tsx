@@ -77,28 +77,35 @@ export default function AssignProctors() {
         blocksRes.json()
       ]);
 
+      let proctorList: Proctor[] = [];
+      let blockList: Block[] = [];
+
       if (employeesData.success) {
-        const proctorList = employeesData.data.filter((emp: any) => 
+        proctorList = employeesData.data.filter((emp: any) => 
           emp.role === 'proctor' || emp.role === 'proctor_manager'
         ).filter((emp: any) => emp.status === 'active');
-        setProctors(proctorList);
       }
 
       if (blocksData.success) {
-        const blockList = blocksData.data;
-        setBlocks(blockList);
-        
-        // Initialize assignments with current proctor assignments
-        const currentAssignments: {[blockId: string]: string | undefined} = {};
-        blockList.forEach((block: Block) => {
-          if (block.proctor_id) {
-            currentAssignments[block.block_id] = block.proctor_id;
-          }
-        });
-        setAssignments(currentAssignments);
+        blockList = blocksData.data;
       }
+
+      // Update state only after both data sets are processed
+      setProctors(proctorList);
+      setBlocks(blockList);
+      
+      // Initialize assignments with current proctor assignments
+      const currentAssignments: {[blockId: string]: string | undefined} = {};
+      blockList.forEach((block: Block) => {
+        if (block.proctor_id) {
+          currentAssignments[block.block_id] = block.proctor_id;
+        }
+      });
+      setAssignments(currentAssignments);
+
     } catch (error) {
       console.error('Error fetching data:', error);
+      setMessage({ type: 'error', text: 'Failed to load data. Please refresh the page.' });
     } finally {
       setLoading(false);
     }
@@ -157,8 +164,10 @@ export default function AssignProctors() {
   };
 
   const getProctorName = (proctorId: string) => {
+    if (!proctorId) return 'Unassigned';
+    if (proctors.length === 0) return 'Loading...'; // Handle case when proctors aren't loaded yet
     const proctor = proctors.find(p => p.employee_id === proctorId);
-    return proctor ? `${proctor.first_name} ${proctor.last_name}` : 'Unknown';
+    return proctor ? `${proctor.first_name} ${proctor.last_name}` : 'Unknown Proctor';
   };
 
   const getProctorAssignmentCount = (proctorId: string) => {

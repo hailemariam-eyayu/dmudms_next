@@ -14,7 +14,7 @@ export default function ProctorRequestsPage() {
 
   useEffect(() => {
     if (status === 'loading') return;
-    if (!session || !['proctor', 'proctor_manager'].includes(session.user.role)) {
+    if (!session || !['proctor', 'proctor_manager', 'coordinator'].includes(session.user.role)) {
       redirect('/auth/signin');
     } else {
       fetchRequests();
