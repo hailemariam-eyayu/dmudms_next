@@ -185,12 +185,12 @@ function ReportEmergencyModal({ onClose, onSubmit }: { onClose: () => void, onSu
   });
 
   const emergencyTypes = [
-    'Medical Emergency',
-    'Fire',
-    'Security Threat',
-    'Natural Disaster',
-    'Facility Emergency',
-    'Other'
+    { label: 'Medical Emergency', value: 'medical' },
+    { label: 'Fire', value: 'fire' },
+    { label: 'Security Threat', value: 'security' },
+    { label: 'Natural Disaster', value: 'other' },
+    { label: 'Facility Emergency', value: 'other' },
+    { label: 'Other', value: 'other' }
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -230,7 +230,7 @@ function ReportEmergencyModal({ onClose, onSubmit }: { onClose: () => void, onSu
               >
                 <option value="">Select emergency type</option>
                 {emergencyTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                  <option key={type.value} value={type.value}>{type.label}</option>
                 ))}
               </select>
             </div>

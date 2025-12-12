@@ -3,16 +3,20 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { 
   Building, 
   Users, 
   UserCheck, 
   Eye,
-  MapPin,
-  Home,
+  Edit,
+  Plus,
   Search,
-  Filter
+  Filter,
+  MapPin,
+  Home
 } from 'lucide-react';
+import ProfileAvatar from '@/components/ProfileAvatar';
 
 interface Block {
   _id: string;
@@ -21,27 +25,32 @@ interface Block {
   proctor_id?: string;
   capacity: number;
   occupied: number;
-  gender: string;
+  gender: 'male' | 'female';
+  status: 'active' | 'inactive' | 'maintenance';
+  reserved_for: 'male' | 'female' | 'mixed' | 'disabled';
+  floors: number;
+  rooms_per_floor: number;
+  room_capacity: number;
   location?: string;
-  status: string;
 }
 
-interface Proctor {
+interface Employee {
   _id: string;
   employee_id: string;
   first_name: string;
   last_name: string;
   role: string;
+  profile_image?: string;
 }
 
-export default function ViewBlocks() {
+export default function CoordinatorBlocks() {
   const { data: session, status } = useSession();
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [proctors, setProctors] = useState<Proctor[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterGender, setFilterGender] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterGender, setFilterGender] = useState('all');
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -69,10 +78,7 @@ export default function ViewBlocks() {
       }
 
       if (employeesData.success) {
-        const proctorList = employeesData.data.filter((emp: any) => 
-          emp.role === 'proctor' || emp.role === 'proctor_manager'
-        );
-        setProctors(proctorList);
+        setEmployees(employeesData.data);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -81,24 +87,27 @@ export default function ViewBlocks() {
     }
   };
 
-  const getProctorName = (proctorId: string) => {
-    const proctor = proctors.find(p => p.employee_id === proctorId);
-    return proctor ? `${proctor.first_name} ${proctor.last_name}` : 'Unassigned';
+  const getProctorName = (proctorId?: string) => {
+    if (!proctorId) return 'Unassigned';
+    const proctor = employees.find(emp => emp.employee_id === proctorId);
+    return proctor ? `${proctor.first_name} ${proctor.last_name}` : 'Unknown Proctor';
   };
 
-  const getOccupancyRate = (block: Block) => {
-    return block.capacity > 0 ? Math.round((block.occupied / block.capacity) * 100) : 0;
+  const getProctor = (proctorId?: string) => {
+    if (!proctorId) return null;
+    return employees.find(emp => emp.employee_id === proctorId);
   };
 
   const filteredBlocks = blocks.filter(block => {
     const matchesSearch = 
-      (block.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (block.block_id || '').toLowerCase().includes(searchTerm.toLowerCase());
+      block.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      block.block_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getProctorName(block.proctor_id).toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesGender = filterGender === 'all' || block.gender === filterGender;
     const matchesStatus = filterStatus === 'all' || block.status === filterStatus;
+    const matchesGender = filterGender === 'all' || block.gender === filterGender;
     
-    return matchesSearch && matchesGender && matchesStatus;
+    return matchesSearch && matchesStatus && matchesGender;
   });
 
   if (status === 'loading' || loading) {
@@ -117,11 +126,13 @@ export default function ViewBlocks() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center">
-            <Building className="h-8 w-8 text-green-600 mr-3" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">View Blocks</h1>
-              <p className="text-gray-600">Overview of all dormitory blocks and their status</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Building className="h-8 w-8 text-green-600 mr-3" />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Blocks & Rooms</h1>
+                <p className="text-gray-600">View and manage dormitory blocks</p>
+              </div>
             </div>
           </div>
         </div>
@@ -157,7 +168,7 @@ export default function ViewBlocks() {
                 <div className="text-2xl font-bold text-gray-900">
                   {blocks.reduce((sum, block) => sum + block.occupied, 0)}
                 </div>
-                <div className="text-gray-600">Total Occupied</div>
+                <div className="text-gray-600">Total Students</div>
               </div>
             </div>
           </div>
@@ -167,9 +178,9 @@ export default function ViewBlocks() {
               <Home className="h-8 w-8 text-orange-600" />
               <div className="ml-4">
                 <div className="text-2xl font-bold text-gray-900">
-                  {blocks.reduce((sum, block) => sum + block.capacity, 0)}
+                  {blocks.reduce((sum, block) => sum + (block.floors * block.rooms_per_floor), 0)}
                 </div>
-                <div className="text-gray-600">Total Capacity</div>
+                <div className="text-gray-600">Total Rooms</div>
               </div>
             </div>
           </div>
@@ -190,31 +201,27 @@ export default function ViewBlocks() {
                 />
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Filter className="h-4 w-4 text-gray-400" />
-                <select
-                  value={filterGender}
-                  onChange={(e) => setFilterGender(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="all">All Genders</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
-              </div>
-              <div className="flex items-center space-x-2">
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="maintenance">Maintenance</option>
-                </select>
-              </div>
+            <div className="flex items-center space-x-2">
+              <Filter className="h-4 w-4 text-gray-400" />
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="maintenance">Maintenance</option>
+              </select>
+              <select
+                value={filterGender}
+                onChange={(e) => setFilterGender(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="all">All Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
             </div>
           </div>
         </div>
@@ -222,53 +229,46 @@ export default function ViewBlocks() {
         {/* Blocks Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBlocks.map((block) => {
-            const occupancyRate = getOccupancyRate(block);
-            const proctorName = getProctorName(block.proctor_id || '');
+            const proctor = getProctor(block.proctor_id);
+            const occupancyRate = (block.occupied / block.capacity) * 100;
             
             return (
-              <div key={block._id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
+              <div key={block._id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
                 <div className="p-6">
-                  {/* Block Header */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center">
                       <Building className="h-6 w-6 text-blue-600 mr-2" />
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{block.name}</h3>
-                        <p className="text-sm text-gray-500">{block.block_id}</p>
-                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900">{block.name}</h3>
                     </div>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      block.status === 'active' 
-                        ? 'bg-green-100 text-green-800' 
-                        : block.status === 'maintenance'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      block.status === 'active' ? 'bg-green-100 text-green-800' :
+                      block.status === 'maintenance' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
                     }`}>
                       {block.status}
                     </span>
                   </div>
 
-                  {/* Block Info */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Gender:</span>
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${
-                        block.gender === 'male' 
-                          ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-pink-100 text-pink-800'
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Block ID:</span>
+                      <span className="font-medium">{block.block_id}</span>
+                    </div>
+                    
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Gender:</span>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        block.gender === 'male' ? 'bg-blue-100 text-blue-800' : 'bg-pink-100 text-pink-800'
                       }`}>
                         {block.gender}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Occupancy:</span>
-                      <span className="text-sm font-medium text-gray-900">
-                        {block.occupied}/{block.capacity} ({occupancyRate}%)
-                      </span>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Capacity:</span>
+                      <span className="font-medium">{block.occupied}/{block.capacity}</span>
                     </div>
 
-                    {/* Occupancy Bar */}
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
                         className={`h-2 rounded-full ${
@@ -279,38 +279,54 @@ export default function ViewBlocks() {
                       ></div>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Proctor:</span>
-                      <span className={`text-sm font-medium ${
-                        block.proctor_id ? 'text-gray-900' : 'text-red-600'
-                      }`}>
-                        {proctorName}
-                      </span>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Floors:</span>
+                      <span className="font-medium">{block.floors}</span>
+                    </div>
+
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Rooms/Floor:</span>
+                      <span className="font-medium">{block.rooms_per_floor}</span>
                     </div>
 
                     {block.location && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Location:</span>
-                        <div className="flex items-center">
-                          <MapPin className="h-3 w-3 text-gray-400 mr-1" />
-                          <span className="text-sm text-gray-900">{block.location}</span>
-                        </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Location:</span>
+                        <span className="font-medium">{block.location}</span>
                       </div>
                     )}
+
+                    <div className="pt-3 border-t">
+                      <div className="text-sm text-gray-500 mb-2">Assigned Proctor:</div>
+                      {proctor ? (
+                        <div className="flex items-center">
+                          <ProfileAvatar 
+                            src={proctor.profile_image} 
+                            name={`${proctor.first_name} ${proctor.last_name}`} 
+                            size="sm"
+                            className="mr-2"
+                          />
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {proctor.first_name} {proctor.last_name}
+                            </div>
+                            <div className="text-xs text-gray-500">{proctor.employee_id}</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400">Unassigned</span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="mt-6 flex space-x-3">
-                    <button className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center">
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Details
-                    </button>
-                    {!block.proctor_id && (
-                      <button className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center justify-center">
-                        <UserCheck className="h-4 w-4 mr-2" />
-                        Assign Proctor
-                      </button>
-                    )}
+                  <div className="mt-6 flex space-x-2">
+                    <Link
+                      href={`/directorate/blocks/${block.block_id}/rooms`}
+                      className="flex-1 bg-blue-600 text-white text-center py-2 px-3 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center justify-center"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View Rooms
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -323,9 +339,9 @@ export default function ViewBlocks() {
             <Building className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">No blocks found</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || filterGender !== 'all' || filterStatus !== 'all'
+              {searchTerm || filterStatus !== 'all' || filterGender !== 'all'
                 ? 'Try adjusting your search or filter criteria.' 
-                : 'No dormitory blocks are available.'}
+                : 'No blocks available.'}
             </p>
           </div>
         )}
