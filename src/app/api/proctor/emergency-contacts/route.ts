@@ -36,9 +36,7 @@ export async function GET(request: NextRequest) {
       proctorBlocks.some(block => block.block_id === placement.block)
     );
 
-    const assignedStudentIds = assignedPlacements.map(p => p.student_id);
-
-    if (assignedStudentIds.length === 0) {
+    if (assignedPlacements.length === 0) {
       return NextResponse.json({
         success: true,
         data: [],
@@ -46,53 +44,30 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get students and their emergency contacts
+    // Get student details and emergency contacts
     const students = await mongoDataStore.getStudents();
     const emergencyContacts = await mongoDataStore.getEmergencyContacts();
-
-    const assignedStudentsWithContacts = assignedStudentIds.map(studentId => {
-      const student = students.find(s => s.student_id === studentId);
-      const placement = assignedPlacements.find(p => p.student_id === studentId);
-      const emergencyContact = emergencyContacts.find((ec: any) => ec.student_id === studentId);
-      
+    
+    const studentsWithEmergencyContacts = assignedPlacements.map(placement => {
+      const student = students.find(s => s.student_id === placement.student_id);
       if (!student) return null;
-
+      
+      const emergencyContact = emergencyContacts.find(ec => ec.student_id === placement.student_id);
+      
       return {
         student_id: student.student_id,
         student_name: `${student.first_name} ${student.second_name || ''} ${student.last_name}`.trim(),
         email: student.email,
-        phone: student.phone,
-        gender: student.gender,
-        status: student.status,
-        block: placement?.block,
-        room: placement?.room,
-        block_name: proctorBlocks.find(b => b.block_id === placement?.block)?.name,
-        emergency_contact: emergencyContact ? {
-          father_name: emergencyContact.father_name,
-          grand_father: emergencyContact.grand_father,
-          grand_grand_father: emergencyContact.grand_grand_father,
-          mother_name: emergencyContact.mother_name,
-          phone: emergencyContact.phone,
-          region: emergencyContact.region,
-          woreda: emergencyContact.woreda,
-          kebele: emergencyContact.kebele,
-          created_at: emergencyContact.created_at,
-          updated_at: emergencyContact.updated_at
-        } : null
+        room: placement.room,
+        block: placement.block,
+        block_name: proctorBlocks.find(b => b.block_id === placement.block)?.name || placement.block,
+        emergency_contact: emergencyContact || null
       };
     }).filter(Boolean);
 
-    // Sort by block and room
-    assignedStudentsWithContacts.sort((a: any, b: any) => {
-      if (a.block !== b.block) {
-        return a.block.localeCompare(b.block);
-      }
-      return a.room.localeCompare(b.room);
-    });
-
     return NextResponse.json({
       success: true,
-      data: assignedStudentsWithContacts,
+      data: studentsWithEmergencyContacts,
       blocks: proctorBlocks.map(block => ({
         block_id: block.block_id,
         name: block.name,

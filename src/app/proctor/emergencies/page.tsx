@@ -229,18 +229,22 @@ function ReportEmergencyModal({ onClose, onSubmit }: { onClose: () => void, onSu
     location: '',
     severity: 'medium'
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string>('');
 
   const emergencyTypes = [
-    'Medical Emergency',
-    'Fire',
-    'Security Threat',
-    'Natural Disaster',
-    'Facility Emergency',
-    'Other'
+    { label: 'Medical Emergency', value: 'medical' },
+    { label: 'Fire', value: 'fire' },
+    { label: 'Security Threat', value: 'security' },
+    { label: 'Natural Disaster', value: 'other' },
+    { label: 'Facility Emergency', value: 'other' },
+    { label: 'Other', value: 'other' }
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
+    setError('');
     
     try {
       const response = await fetch('/api/emergencies', {
@@ -251,11 +255,18 @@ function ReportEmergencyModal({ onClose, onSubmit }: { onClose: () => void, onSu
         body: JSON.stringify(formData)
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         onSubmit();
+      } else {
+        setError(data.error || 'Failed to report emergency');
       }
     } catch (error) {
       console.error('Error reporting emergency:', error);
+      setError('Network error. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -264,6 +275,12 @@ function ReportEmergencyModal({ onClose, onSubmit }: { onClose: () => void, onSu
       <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div className="mt-3">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Report Emergency</h3>
+          
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -276,7 +293,7 @@ function ReportEmergencyModal({ onClose, onSubmit }: { onClose: () => void, onSu
               >
                 <option value="">Select emergency type</option>
                 {emergencyTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                  <option key={type.value} value={type.value}>{type.label}</option>
                 ))}
               </select>
             </div>
@@ -328,9 +345,10 @@ function ReportEmergencyModal({ onClose, onSubmit }: { onClose: () => void, onSu
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                disabled={submitting}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Report Emergency
+                {submitting ? 'Reporting...' : 'Report Emergency'}
               </button>
             </div>
           </form>
