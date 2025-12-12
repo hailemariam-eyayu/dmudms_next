@@ -56,14 +56,18 @@ export async function PUT(
     const updateData = await request.json();
     const { id } = await params;
     
+    // Remove password from update data to prevent accidental password clearing
+    // Password should only be updated through dedicated password reset endpoints
+    const { password, ...safeUpdateData } = updateData;
+    
     // The id parameter could be either MongoDB _id or student_id
     // First try to find by student_id, then by MongoDB _id
     let result;
     try {
-      result = await mongoDataStore.updateStudent(id, updateData);
+      result = await mongoDataStore.updateStudent(id, safeUpdateData);
     } catch (error) {
       // If that fails, try updating by MongoDB _id
-      result = await mongoDataStore.updateStudentById(id, updateData);
+      result = await mongoDataStore.updateStudentById(id, safeUpdateData);
     }
     
     if (!result) {

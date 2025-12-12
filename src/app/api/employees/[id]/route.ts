@@ -48,7 +48,11 @@ export async function PUT(
     const updateData = await request.json();
     const { id } = await params;
     
-    const result = await mongoDataStore.updateEmployee(id, updateData);
+    // Remove password from update data to prevent accidental password clearing
+    // Password should only be updated through dedicated password reset endpoints
+    const { password, ...safeUpdateData } = updateData;
+    
+    const result = await mongoDataStore.updateEmployee(id, safeUpdateData);
     
     return NextResponse.json({
       success: true,
