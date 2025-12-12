@@ -252,7 +252,7 @@ If you did not request this reset, contact the administrator immediately.
   // Test email configuration
   public async testEmailService(): Promise<boolean> {
     return await this.sendEmail({
-      to: 'test@dmu.edu',
+      to: 'hailemariameyayu2012@gmail.com',
       subject: 'DMUDMS Email Service Test',
       html: '<p>This is a test email from DMUDMS.</p>',
       text: 'This is a test email from DMUDMS.'
