@@ -96,8 +96,8 @@ export async function PUT(
           console.log('✅ DEBUG: Update by student_id successful:', !!result);
         } catch (secondError) {
           console.error('❌ DEBUG: Both update methods failed:', {
-            firstError: error.message,
-            secondError: secondError.message
+            firstError: error instanceof Error ? error.message : 'Unknown error',
+            secondError: secondError instanceof Error ? secondError.message : 'Unknown error'
           });
         }
       }
@@ -113,8 +113,8 @@ export async function PUT(
           console.log('✅ DEBUG: Update by MongoDB _id successful:', !!result);
         } catch (secondError) {
           console.error('❌ DEBUG: Both update methods failed:', {
-            firstError: error.message,
-            secondError: secondError.message
+            firstError: error instanceof Error ? error.message : 'Unknown error',
+            secondError: secondError instanceof Error ? secondError.message : 'Unknown error'
           });
         }
       }

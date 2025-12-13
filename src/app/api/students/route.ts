@@ -110,9 +110,9 @@ export async function POST(request: NextRequest) {
         console.log(`📧 DEBUG: Final email sent status: ${emailSent ? 'SUCCESS' : 'FAILED'}`);
       } catch (error) {
         console.error('❌ DEBUG: Failed to send welcome email - Error details:', {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : 'Unknown'
         });
         emailSent = false;
         // Don't fail the request if email fails
