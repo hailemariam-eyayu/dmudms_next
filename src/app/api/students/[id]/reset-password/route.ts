@@ -40,7 +40,7 @@ export async function POST(
           userId: student.student_id,
           password: newPassword,
           loginUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`,
-          userType: 'student'
+          userType: 'student' as const
         });
       } catch (error) {
         console.error('Failed to send password reset email:', error);

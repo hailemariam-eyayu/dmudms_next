@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
           userId: 'TEST001',
           password: 'test123',
           loginUrl: process.env.NEXTAUTH_URL || 'http://localhost:3000',
-          userType: 'student'
+          userType: 'student' as const
         });
         message = 'Welcome email test completed';
         break;
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
           userId: 'TEST001',
           password: 'newpass123',
           loginUrl: process.env.NEXTAUTH_URL || 'http://localhost:3000',
-          userType: 'employee'
+          userType: 'employee' as const
         });
         message = 'Password reset email test completed';
         break;

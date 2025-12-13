@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
             userId: studentData.student_id,
             password: generatedPassword,
             loginUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`,
-            userType: 'student'
+            userType: 'student' as const
           });
           results.emailsSent++;
         } catch (emailError) {

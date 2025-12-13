@@ -41,7 +41,7 @@ export async function POST(
           userId: employee.employee_id,
           password: newPassword,
           loginUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`,
-          userType: 'employee'
+          userType: 'employee' as const
         });
         emailSent = emailResult;
         console.log(`📧 Password reset email result: ${emailResult ? 'SUCCESS' : 'FAILED'}`);
