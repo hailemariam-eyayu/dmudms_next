@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate role
-        const validRoles = ['admin', 'directorate', 'coordinator', 'proctor', 'proctormanager'];
+        const validRoles = ['admin', 'directorate', 'coordinator', 'proctor', 'security_guard', 'registrar', 'maintainer'];
         if (!validRoles.includes(record.role.toLowerCase())) {
           results.errors.push(`Row with employee_id ${record.employee_id}: Role must be one of: ${validRoles.join(', ')}`);
           results.skipped++;

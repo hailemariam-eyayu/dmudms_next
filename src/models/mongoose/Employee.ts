@@ -8,7 +8,7 @@ export interface IEmployee extends Document {
   gender: 'male' | 'female';
   phone?: string;
   department?: string;
-  role: 'admin' | 'directorate' | 'coordinator' | 'proctor' | 'proctor_manager' | 'registrar' | 'maintainer';
+  role: 'admin' | 'directorate' | 'coordinator' | 'proctor' | 'security_guard' | 'registrar' | 'maintainer';
   status: 'active' | 'inactive';
   password?: string;
   profile_image?: string;
@@ -55,7 +55,7 @@ const EmployeeSchema: Schema = new Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'directorate', 'coordinator', 'proctor', 'proctor_manager', 'registrar', 'maintainer'],
+    enum: ['admin', 'directorate', 'coordinator', 'proctor', 'security_guard', 'registrar', 'maintainer'],
     required: true
   },
   status: {

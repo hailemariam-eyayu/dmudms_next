@@ -507,7 +507,7 @@ export default function EmployeeManagement() {
                   <option value="directorate">Directorate</option>
                   <option value="coordinator">Coordinator</option>
                   <option value="proctor">Proctor</option>
-                  <option value="proctor_manager">Proctor Manager</option>
+                  <option value="security_guard">Security Guard</option>
                   <option value="registrar">Registrar</option>
                   <option value="maintainer">Maintainer</option>
                 </select>

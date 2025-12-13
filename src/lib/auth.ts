@@ -5,7 +5,7 @@ import { Employee, Student } from '@/types';
 import unifiedDataStore from './unifiedDataStore';
 
 // Define user roles
-export type UserRole = 'admin' | 'directorate' | 'coordinator' | 'proctor' | 'registrar' | 'maintainer' | 'student';
+export type UserRole = 'admin' | 'directorate' | 'coordinator' | 'proctor' | 'security_guard' | 'registrar' | 'maintainer' | 'student';
 
 // Extended user type for NextAuth
 export interface AuthUser {
@@ -23,6 +23,7 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
   coordinator: 5,
   registrar: 4,
   proctor: 3,
+  security_guard: 2,
   maintainer: 2,
   student: 1
 };

@@ -73,10 +73,18 @@ export default function RoleBasedNavigation() {
         return [
           { name: 'Dashboard', href: '/proctor', icon: Home },
           { name: 'My Students', href: '/proctor/students', icon: Users },
+          { name: 'Exit Papers', href: '/proctor/exit-papers', icon: ClipboardList },
           { name: 'Emergency Contacts', href: '/proctor/emergency-contacts', icon: Phone },
           { name: 'Materials', href: '/proctor/materials', icon: Package },
           { name: 'Requests', href: '/proctor/requests', icon: ClipboardList },
           { name: 'Emergencies', href: '/proctor/emergencies', icon: AlertTriangle },
+          { name: 'My Profile', href: '/profile', icon: User }
+        ];
+
+      case 'security_guard':
+        return [
+          { name: 'Dashboard', href: '/security-guard', icon: Home },
+          { name: 'Exit Papers', href: '/security-guard', icon: ClipboardList },
           { name: 'My Profile', href: '/profile', icon: User }
         ];
       
@@ -84,6 +92,7 @@ export default function RoleBasedNavigation() {
         return [
           { name: 'Dashboard', href: '/student', icon: Home },
           { name: 'My Room', href: '/student/placement', icon: Building },
+          { name: 'Exit Paper', href: '/student/exit-paper', icon: ClipboardList },
           { name: 'Emergency Contact', href: '/student/emergency-contact', icon: AlertTriangle },
           { name: 'Requests', href: '/student/requests', icon: ClipboardList },
           { name: 'Materials', href: '/student/materials', icon: Package },

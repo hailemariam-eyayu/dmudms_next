@@ -15,11 +15,12 @@ export default withAuth(
 
     // Define role-based route permissions
     const roleRoutes: Record<string, string[]> = {
-      admin: ['/admin', '/directorate', '/proctor', '/student', '/coordinator', '/profile'],
+      admin: ['/admin', '/directorate', '/proctor', '/student', '/coordinator', '/security-guard', '/profile'],
       directorate: ['/directorate', '/admin/students', '/admin/employees', '/placements', '/requests', '/emergency', '/profile'],
       proctor: ['/proctor', '/profile'],
       student: ['/student'],
       coordinator: ['/coordinator', '/admin/students', '/placements', '/requests', '/profile'],
+      security_guard: ['/security-guard', '/profile'],
       registrar: ['/registrar', '/profile'],
       maintainer: ['/maintainer', '/profile']
     };
@@ -49,6 +50,7 @@ export default withAuth(
         proctor: '/proctor',
         student: '/student',
         coordinator: '/coordinator',
+        security_guard: '/security-guard',
         registrar: '/dashboard',
         maintainer: '/dashboard'
       };
@@ -73,6 +75,7 @@ export const config = {
     '/coordinator/:path*',
     '/proctor/:path*',
     '/student/:path*',
+    '/security-guard/:path*',
     '/dashboard/:path*',
     '/placements/:path*',
     '/requests/:path*',
