@@ -32,7 +32,7 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
 export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
   '/dashboard': ['admin', 'directorate', 'coordinator', 'proctor', 'registrar', 'student'],
   '/students': ['admin', 'directorate', 'coordinator', 'registrar'],
-  '/students/create': ['admin', 'registrar'],
+  '/students/create': ['admin', 'directorate', 'registrar'],
   '/rooms': ['admin', 'directorate', 'coordinator'],
   '/blocks': ['admin', 'directorate', 'coordinator'],
   '/placements': ['admin', 'directorate', 'coordinator'],
