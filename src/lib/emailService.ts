@@ -82,9 +82,9 @@ export class EmailService {
 
     } catch (error) {
       console.error('📧 DEBUG: Email sending failed with error:', {
-        message: error.message,
-        code: error.code,
-        stack: error.stack
+        message: error instanceof Error ? error.message : 'Unknown error',
+        code: (error as any)?.code || 'Unknown code',
+        stack: error instanceof Error ? error.stack : undefined
       });
       return false;
     }
