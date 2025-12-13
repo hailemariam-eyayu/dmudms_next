@@ -60,30 +60,69 @@ export async function POST(request: NextRequest) {
       studentData.password = generatedPassword;
     }
 
+    console.log('🔍 DEBUG: About to create student with data:', {
+      student_id: studentData.student_id,
+      email: studentData.email,
+      hasPassword: !!studentData.password,
+      generatedPassword: !!generatedPassword
+    });
+
     const result = await mongoDataStore.createStudent(studentData);
+    
+    console.log('✅ DEBUG: Student created successfully:', {
+      success: !!result,
+      resultId: result?._id || result?.student_id
+    });
     
     // Send welcome email with credentials
     let emailSent = false;
+    console.log('🔍 DEBUG: Email sending conditions check:', {
+      hasGeneratedPassword: !!generatedPassword,
+      hasEmail: !!studentData.email,
+      emailValue: studentData.email,
+      passwordValue: generatedPassword,
+      shouldSendEmail: !!(generatedPassword && studentData.email)
+    });
+
     if (generatedPassword && studentData.email) {
       try {
-        console.log(`📧 Attempting to send welcome email to: ${studentData.email}`);
-        const emailResult = await emailService.sendWelcomeEmail({
+        console.log(`📧 DEBUG: Preparing to send welcome email...`);
+        console.log(`📧 DEBUG: Email recipient: ${studentData.email}`);
+        console.log(`📧 DEBUG: Student name: ${studentData.first_name} ${studentData.second_name} ${studentData.last_name}`);
+        console.log(`📧 DEBUG: User ID: ${studentData.student_id}`);
+        console.log(`📧 DEBUG: Password: ${generatedPassword}`);
+        
+        const emailData = {
           name: `${studentData.first_name} ${studentData.second_name} ${studentData.last_name}`.trim(),
           email: studentData.email,
           userId: studentData.student_id,
           password: generatedPassword,
           loginUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`,
           userType: 'student'
-        });
+        };
+        
+        console.log(`📧 DEBUG: Email data object:`, emailData);
+        
+        const emailResult = await emailService.sendWelcomeEmail(emailData);
         emailSent = emailResult;
-        console.log(`📧 Email send result: ${emailResult ? 'SUCCESS' : 'FAILED'}`);
+        
+        console.log(`📧 DEBUG: Email service returned: ${emailResult}`);
+        console.log(`📧 DEBUG: Final email sent status: ${emailSent ? 'SUCCESS' : 'FAILED'}`);
       } catch (error) {
-        console.error('Failed to send welcome email:', error);
+        console.error('❌ DEBUG: Failed to send welcome email - Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
         emailSent = false;
         // Don't fail the request if email fails
       }
     } else {
-      console.log(`📧 Email not sent - generatedPassword: ${!!generatedPassword}, email: ${!!studentData.email}`);
+      console.log(`📧 DEBUG: Email not sent - Conditions not met:`, {
+        generatedPassword: !!generatedPassword,
+        email: !!studentData.email,
+        emailValue: studentData.email
+      });
     }
     
     return NextResponse.json({

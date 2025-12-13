@@ -35,6 +35,14 @@ export class EmailService {
 
   // Send email using SMTP or email service
   private async sendEmail(options: EmailOptions): Promise<boolean> {
+    console.log('📧 DEBUG: sendEmail called with options:', {
+      to: options.to,
+      subject: options.subject,
+      hasHtml: !!options.html,
+      hasText: !!options.text,
+      isEnabled: this.isEnabled
+    });
+    
     try {
       if (!this.isEnabled) {
         console.log('📧 Email Service (Mock Mode):');
@@ -64,18 +72,35 @@ export class EmailService {
         text: options.text,
       };
 
+      console.log('📧 DEBUG: About to send email via transporter...');
       const info = await transporter.sendMail(mailOptions);
-      console.log('📧 Email sent successfully:', info.messageId);
+      console.log('📧 DEBUG: Email sent successfully:', {
+        messageId: info.messageId,
+        response: info.response
+      });
       return true;
 
     } catch (error) {
-      console.error('📧 Email sending failed:', error);
+      console.error('📧 DEBUG: Email sending failed with error:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
       return false;
     }
   }
 
   // Send welcome email with login credentials
   public async sendWelcomeEmail(data: PasswordEmailData): Promise<boolean> {
+    console.log('📧 DEBUG: sendWelcomeEmail called with data:', {
+      name: data.name,
+      email: data.email,
+      userId: data.userId,
+      userType: data.userType,
+      hasPassword: !!data.password,
+      loginUrl: data.loginUrl
+    });
+    
     const subject = `Welcome to DMUDMS - Your Account Details`;
     
     const html = `

@@ -61,30 +61,70 @@ export async function POST(request: NextRequest) {
       employeeData.password = generatedPassword;
     }
 
+    console.log('🔍 DEBUG: About to create employee with data:', {
+      employee_id: employeeData.employee_id,
+      email: employeeData.email,
+      hasPassword: !!employeeData.password,
+      generatedPassword: !!generatedPassword
+    });
+
     const result = await mongoDataStore.createEmployee(employeeData);
+    
+    console.log('✅ DEBUG: Employee created successfully:', {
+      success: !!result,
+      resultId: result?._id || result?.employee_id
+    });
     
     // Send welcome email with credentials
     let emailSent = false;
+    console.log('🔍 DEBUG: Email sending conditions check:', {
+      hasGeneratedPassword: !!generatedPassword,
+      hasEmail: !!employeeData.email,
+      emailValue: employeeData.email,
+      passwordValue: generatedPassword,
+      shouldSendEmail: !!(generatedPassword && employeeData.email)
+    });
+
     if (generatedPassword && employeeData.email) {
       try {
-        console.log(`📧 Attempting to send welcome email to: ${employeeData.email}`);
-        const emailResult = await emailService.sendWelcomeEmail({
+        console.log(`📧 DEBUG: Preparing to send welcome email...`);
+        console.log(`📧 DEBUG: Email recipient: ${employeeData.email}`);
+        console.log(`📧 DEBUG: Employee name: ${employeeData.first_name} ${employeeData.last_name}`);
+        console.log(`📧 DEBUG: User ID: ${employeeData.employee_id}`);
+        console.log(`📧 DEBUG: Password: ${generatedPassword}`);
+        console.log(`📧 DEBUG: Login URL: ${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`);
+        
+        const emailData = {
           name: `${employeeData.first_name} ${employeeData.last_name}`,
           email: employeeData.email,
           userId: employeeData.employee_id,
           password: generatedPassword,
           loginUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/signin`,
           userType: 'employee'
-        });
+        };
+        
+        console.log(`📧 DEBUG: Email data object:`, emailData);
+        
+        const emailResult = await emailService.sendWelcomeEmail(emailData);
         emailSent = emailResult;
-        console.log(`📧 Email send result: ${emailResult ? 'SUCCESS' : 'FAILED'}`);
+        
+        console.log(`📧 DEBUG: Email service returned: ${emailResult}`);
+        console.log(`📧 DEBUG: Final email sent status: ${emailSent ? 'SUCCESS' : 'FAILED'}`);
       } catch (error) {
-        console.error('Failed to send welcome email:', error);
+        console.error('❌ DEBUG: Failed to send welcome email - Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
         emailSent = false;
         // Don't fail the request if email fails
       }
     } else {
-      console.log(`📧 Email not sent - generatedPassword: ${!!generatedPassword}, email: ${!!employeeData.email}`);
+      console.log(`📧 DEBUG: Email not sent - Conditions not met:`, {
+        generatedPassword: !!generatedPassword,
+        email: !!employeeData.email,
+        emailValue: employeeData.email
+      });
     }
     
     // Return the result with the generated password (for admin to share with employee)
