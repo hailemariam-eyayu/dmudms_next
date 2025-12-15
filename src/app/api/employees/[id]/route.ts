@@ -132,8 +132,41 @@ export async function PUT(
     console.error('📋 Error details:', {
       message: error.message,
       stack: error.stack,
-      name: error.name
+      name: error.name,
+      code: error.code
     });
+
+    // Handle specific MongoDB errors
+    if (error.code === 11000 || error.message.includes('duplicate key')) {
+      console.log('🔍 Duplicate key error detected');
+      
+      // Check if it's an email duplicate
+      if (error.message.includes('email')) {
+        console.log('📧 Email duplicate error');
+        return NextResponse.json(
+          { success: false, error: 'Email address is already in use by another employee' },
+          { status: 400 }
+        );
+      }
+      
+      // Generic duplicate key error
+      return NextResponse.json(
+        { success: false, error: 'This information is already in use by another employee' },
+        { status: 400 }
+      );
+    }
+
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      console.log('📝 Validation error detected');
+      const validationErrors = Object.values(error.errors || {}).map((err: any) => err.message);
+      return NextResponse.json(
+        { success: false, error: 'Validation failed', details: validationErrors },
+        { status: 400 }
+      );
+    }
+
+    // Generic error fallback
     return NextResponse.json(
       { success: false, error: 'Internal server error', details: error.message },
       { status: 500 }

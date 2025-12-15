@@ -235,9 +235,21 @@ class MongoDataStore {
       return result;
     } catch (error: any) {
       console.error('❌ MongoDB update error:', error.message);
+      console.error('📋 Error code:', error.code);
+      
+      // Handle duplicate key errors
+      if (error.code === 11000) {
+        console.error('🔍 Duplicate key error in MongoDB');
+        if (error.message.includes('email')) {
+          console.error('📧 Email duplicate detected');
+        }
+      }
+      
+      // Handle validation errors
       if (error.errors) {
         console.error('📋 Validation errors:', Object.keys(error.errors).map(key => `${key}: ${error.errors[key].message}`));
       }
+      
       throw error;
     }
   }
