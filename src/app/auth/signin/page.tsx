@@ -191,7 +191,6 @@ export default function SignIn() {
             <div className="mt-6 p-4 bg-gray-50 rounded-md">
               <h4 className="text-sm font-medium text-gray-900 mb-2">Production Credentials (All passwords: password):</h4>
               <div className="text-xs text-gray-600 space-y-1">
-                <div><strong>Admin:</strong> Employee1 / password</div>
                 <div><strong>Coordinator:</strong> Employee2 / password</div>
                 <div><strong>Directorate:</strong> Employee3 / password</div>
                 <div><strong>Coordinator:</strong> Employee4 / password</div>
