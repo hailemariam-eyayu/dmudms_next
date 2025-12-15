@@ -70,9 +70,44 @@ export async function PUT(
     const updates = await request.json();
     console.log('📝 Update data received:', JSON.stringify(updates, null, 2));
     
-    // Remove sensitive fields that shouldn't be updated via profile
-    const { password, employee_id, role, status, ...allowedUpdates } = updates;
+    // Determine allowed updates based on user role and context
+    let allowedUpdates: any;
+    
+    if (session.user.role === 'admin') {
+      // Admins can update everything except password and employee_id
+      const { password, employee_id, ...adminAllowedUpdates } = updates;
+      allowedUpdates = adminAllowedUpdates;
+      console.log('👑 Admin update - allowing role and status changes');
+    } else if (session.user.id === id) {
+      // Users updating their own profile - block sensitive fields
+      const { password, employee_id, role, status, ...profileUpdates } = updates;
+      allowedUpdates = profileUpdates;
+      console.log('👤 Profile update - blocking role and status changes');
+    } else {
+      // Directorate users updating others - allow most fields but not role
+      const { password, employee_id, role, ...directorateUpdates } = updates;
+      allowedUpdates = directorateUpdates;
+      console.log('🏢 Directorate update - allowing status but not role changes');
+    }
+    
     console.log('✅ Allowed updates:', JSON.stringify(allowedUpdates, null, 2));
+
+    // Validate role and status if they're being updated by admin
+    if (session.user.role === 'admin' && allowedUpdates.role) {
+      const validRoles = ['admin', 'directorate', 'coordinator', 'proctor', 'security_guard', 'registrar', 'maintainer'];
+      if (!validRoles.includes(allowedUpdates.role)) {
+        console.log('❌ Invalid role provided:', allowedUpdates.role);
+        return NextResponse.json({ success: false, error: 'Invalid role provided' }, { status: 400 });
+      }
+    }
+    
+    if (allowedUpdates.status) {
+      const validStatuses = ['active', 'inactive'];
+      if (!validStatuses.includes(allowedUpdates.status)) {
+        console.log('❌ Invalid status provided:', allowedUpdates.status);
+        return NextResponse.json({ success: false, error: 'Invalid status provided' }, { status: 400 });
+      }
+    }
 
     console.log('🔄 Calling mongoDataStore.updateEmployee...');
     const updatedEmployee = await mongoDataStore.updateEmployee(id, allowedUpdates);
