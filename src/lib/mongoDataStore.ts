@@ -220,11 +220,26 @@ class MongoDataStore {
 
   async updateEmployee(employeeId: string, updates: any) {
     await this.init();
-    return await Employee.findOneAndUpdate(
-      { employee_id: employeeId },
-      updates,
-      { new: true }
-    ).lean();
+    console.log('🔄 mongoDataStore.updateEmployee called');
+    console.log('📋 Employee ID:', employeeId);
+    console.log('📝 Updates:', JSON.stringify(updates, null, 2));
+    
+    try {
+      const result = await Employee.findOneAndUpdate(
+        { employee_id: employeeId },
+        updates,
+        { new: true, runValidators: true }
+      ).lean();
+      
+      console.log('✅ MongoDB update result:', result ? 'Success' : 'Employee not found');
+      return result;
+    } catch (error: any) {
+      console.error('❌ MongoDB update error:', error.message);
+      if (error.errors) {
+        console.error('📋 Validation errors:', Object.keys(error.errors).map(key => `${key}: ${error.errors[key].message}`));
+      }
+      throw error;
+    }
   }
 
   async deleteEmployee(employeeId: string) {

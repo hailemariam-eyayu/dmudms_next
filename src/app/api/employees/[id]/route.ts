@@ -48,32 +48,44 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('🔄 Employee update API called');
+    
     const session = await getServerSession(authOptions);
+    console.log('📋 Session:', session ? `User: ${session.user.id}, Role: ${session.user.role}` : 'No session');
     
     if (!session) {
+      console.log('❌ No session found');
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
+    console.log('🎯 Target employee ID:', id);
     
     // Allow users to update their own profile or admins to update any profile
     if (session.user.id !== id && !['admin', 'directorate'].includes(session.user.role)) {
+      console.log('❌ Insufficient permissions');
       return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
     }
 
     const updates = await request.json();
+    console.log('📝 Update data received:', JSON.stringify(updates, null, 2));
     
     // Remove sensitive fields that shouldn't be updated via profile
     const { password, employee_id, role, status, ...allowedUpdates } = updates;
+    console.log('✅ Allowed updates:', JSON.stringify(allowedUpdates, null, 2));
 
+    console.log('🔄 Calling mongoDataStore.updateEmployee...');
     const updatedEmployee = await mongoDataStore.updateEmployee(id, allowedUpdates);
+    console.log('📊 Update result:', updatedEmployee ? 'Success' : 'Employee not found');
     
     if (!updatedEmployee) {
+      console.log('❌ Employee not found');
       return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404 });
     }
 
     // Remove password from response
     const { password: _, ...employeeData } = updatedEmployee;
+    console.log('✅ Returning success response');
 
     return NextResponse.json({
       success: true,
@@ -81,9 +93,14 @@ export async function PUT(
       message: 'Employee updated successfully'
     });
   } catch (error: any) {
-    console.error('Error updating employee:', error);
+    console.error('❌ Error updating employee:', error);
+    console.error('📋 Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Internal server error', details: error.message },
       { status: 500 }
     );
   }
